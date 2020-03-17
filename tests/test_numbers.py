@@ -1,13 +1,7 @@
-import librosa
-import numpy as np
-import os
 import unittest
-from pathlib import Path
-from audio import Audio
+
 from text.numbers_de import normalize_numbers_de
 from text.numbers_en import normalize_numbers_en
-from text.text_cleaner import expand_numbers
-from utils import read_config
 
 
 class TestNumbers(unittest.TestCase):

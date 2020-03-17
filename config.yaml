@@ -1,3 +1,4 @@
+# AUDIO
 sample_rate: 22050
 n_fft: 2048
 n_mels: 80
@@ -7,5 +8,8 @@ fmin: 40
 min_db: -100
 ref_db: 20
 
-# preprocessing
+# PREPROCESSING
 n_workers: 16
+
+# TEXT
+letters: !\'(),.:;?_- ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜäöüabcdefghijklmnopqrstuvwxyz

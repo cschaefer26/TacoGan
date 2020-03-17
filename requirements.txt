@@ -1,1 +1,6 @@
 librosa
+matplotlib
+unidecode
+inflect
+num2words
+torch >= 1.0
