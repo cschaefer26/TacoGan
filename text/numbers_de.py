@@ -6,6 +6,12 @@ _decimal_number_re = re.compile(r'([0-9]+[\.,][0-9]+)')
 _number_re = re.compile(r'[0-9]+')
 
 
+def normalize_numbers_de(text):
+    text = re.sub(_decimal_number_re, _expand_decimal, text)
+    text = re.sub(_number_re, _expand_number, text)
+    return text
+
+
 def _expand_decimal(m):
     m = m.group(1).replace(',', '.')
     parts = m.split('.')
@@ -26,9 +32,3 @@ def _expand_number(m):
                    + num2words(num % 100, lang='de')
     else:
         return num2words(num, lang='de')
-
-
-def normalize_numbers_de(text):
-    text = re.sub(_decimal_number_re, _expand_decimal, text)
-    text = re.sub(_number_re, _expand_number, text)
-    return text
