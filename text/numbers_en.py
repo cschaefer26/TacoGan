@@ -68,9 +68,3 @@ def normalize_numbers_en(text):
     text = re.sub(_ordinal_re, _expand_ordinal, text)
     text = re.sub(_number_re, _expand_number, text)
     return text
-
-
-if __name__ == '__main__':
-    text = 'This happened 1900'
-    text = normalize_numbers_en(text)
-    print(text)

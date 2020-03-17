@@ -1,11 +1,10 @@
-# Adapted from https://github.com/fatchord/WaveRNN
 from typing import Tuple
 
 import numpy as np
 from pathlib import Path
 from audio import Audio
-from paths import Paths
-from utils import read_config, get_files, progbar, pickle_binary
+from utils.paths import Paths
+from utils.io import read_config, get_files, progbar, pickle_binary
 from multiprocessing import Pool, cpu_count
 
 

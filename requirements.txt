@@ -4,3 +4,4 @@ unidecode
 inflect
 num2words
 torch >= 1.0
+ruamel.yaml
