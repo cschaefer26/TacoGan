@@ -12,7 +12,7 @@ ref_db: 20
 n_workers: 16
 
 # TEXT
-letters: "!'(),.:;?_- ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜäöüabcdefghijklmnopqrstuvwxyz"
+symbols: "!'(),.:;?_- ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜäöüabcdefghijklmnopqrstuvwxyz"
 cleaners: 'english_cleaners'
 
 # GENERAL
@@ -20,3 +20,10 @@ seed: 42
 
 # DATASET
 n_val: 200
+max_mel_len: 1200
+
+# TRAINING
+training_schedule:
+  - [10, 1e-3, 10_000, 32]
+  - [5, 1e-4, 100_000, 8]
+  - [2, 1e-4, 200_000, 8]

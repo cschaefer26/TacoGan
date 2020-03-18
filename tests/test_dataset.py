@@ -1,11 +1,9 @@
-import librosa
 import numpy as np
 import os
 import unittest
 from pathlib import Path
 from audio import Audio
 from dataset import AudioDataset, collate_fn
-from text.text_cleaner import english_cleaners
 from text.tokenizer import Tokenizer
 from utils.io import read_config
 
