@@ -1,3 +1,5 @@
+import argparse
+from random import Random
 from typing import Tuple
 
 import numpy as np
@@ -35,28 +37,35 @@ def read_metafile(path: str):
 
 if __name__ == '__main__':
 
-    path = '/Users/cschaefe/datasets/LJSpeech/LJSpeech-1.1'
+    parser = argparse.ArgumentParser(description='Preprocessing script that generates mel spectrograms.')
+    parser.add_argument('--path', '-p', help='Point to the data path, expects LJSpeech-like folder.')
+    args = parser.parse_args()
     cfg = read_config('config.yaml')
+
     audio = Audio(cfg)
     paths = Paths()
     preprocessor = Preprocessor(audio, paths.mel)
 
-    files = get_files(path)
+    files = get_files(args.path)
     n_workers = min(cpu_count(), cfg['n_workers'])
     pool = Pool(processes=n_workers)
     map_func = pool.imap_unordered(preprocessor.process_wav, files)
     dataset = []
 
-    text_dict = read_metafile(path)
+    text_dict = read_metafile(args.path)
 
     for i, (mel_id, mel_len) in enumerate(map_func, 1):
         dataset += [(mel_id, mel_len)]
         progbar(i, len(files), f'{i}/{len(files)}')
 
-    # filter ids that are not present in the text
     dataset = [d for d in dataset if d[0] in text_dict]
+    random = Random(cfg['seed'])
+    random.shuffle(dataset)
+    train_dataset = dataset[cfg['n_val']:]
+    val_dataset = dataset[:cfg['n_val']]
 
     pickle_binary(text_dict, paths.data/'text_dict.pkl')
-    pickle_binary(dataset, paths.data/'dataset.pkl')
+    pickle_binary(dataset, paths.data/'train_dataset.pkl')
+    pickle_binary(dataset, paths.data/'val_dataset.pkl')
 
 

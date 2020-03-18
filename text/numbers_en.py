@@ -1,7 +1,16 @@
-""" from https://github.com/keithito/tacotron """
+""" adapted from https://github.com/keithito/tacotron """
 
 import inflect
 import re
+
+
+_inflect = inflect.engine()
+_comma_number_re = re.compile(r'([0-9][0-9\,]+[0-9])')
+_decimal_number_re = re.compile(r'([0-9]+\.[0-9]+)')
+_pounds_re = re.compile(r'£([0-9\,]*[0-9]+)')
+_dollars_re = re.compile(r'\$([0-9\.\,]*[0-9]+)')
+_ordinal_re = re.compile(r'[0-9]+(st|nd|rd|th)')
+_number_re = re.compile(r'[0-9]+')
 
 
 def normalize_numbers_en(text):
@@ -12,15 +21,6 @@ def normalize_numbers_en(text):
     text = re.sub(_ordinal_re, _expand_ordinal, text)
     text = re.sub(_number_re, _expand_number, text)
     return text
-
-
-_inflect = inflect.engine()
-_comma_number_re = re.compile(r'([0-9][0-9\,]+[0-9])')
-_decimal_number_re = re.compile(r'([0-9]+\.[0-9]+)')
-_pounds_re = re.compile(r'£([0-9\,]*[0-9]+)')
-_dollars_re = re.compile(r'\$([0-9\.\,]*[0-9]+)')
-_ordinal_re = re.compile(r'[0-9]+(st|nd|rd|th)')
-_number_re = re.compile(r'[0-9]+')
 
 
 def _remove_commas(m):
@@ -69,5 +69,4 @@ def _expand_number(m):
             return _inflect.number_to_words(num, andword='', zero='oh', group=2).replace(', ', ' ')
     else:
         return _inflect.number_to_words(num, andword='')
-
 

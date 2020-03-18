@@ -35,10 +35,12 @@ class Audio:
             n_fft=self.n_fft,
             n_mels=self.n_mels,
             fmin=self.fmin)
+        mel = mel.T
         mel = self._compress(mel)
         return self._normalize(mel)
 
     def griffinlim(self, mel, n_iter=32):
+        mel = mel.T
         denormalized = self._denormalize(mel)
         amp_mel = self._decompress(denormalized)
         S = librosa.feature.inverse.mel_to_stft(

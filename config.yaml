@@ -12,4 +12,11 @@ ref_db: 20
 n_workers: 16
 
 # TEXT
-letters: !\'(),.:;?_- ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜäöüabcdefghijklmnopqrstuvwxyz
+letters: "!'(),.:;?_- ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜäöüabcdefghijklmnopqrstuvwxyz"
+cleaners: 'english_cleaners'
+
+# GENERAL
+seed: 42
+
+# DATASET
+n_val: 200

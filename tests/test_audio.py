@@ -4,7 +4,7 @@ import os
 import unittest
 from pathlib import Path
 from audio import Audio
-from utils import read_config
+from utils.io import read_config
 
 
 class TestAudio(unittest.TestCase):

@@ -1,10 +1,20 @@
-""" from https://github.com/keithito/tacotron """
+""" adapted from https://github.com/keithito/tacotron """
 
 import re
 import unidecode
 
 from text.numbers_de import normalize_numbers_de
 from text.numbers_en import normalize_numbers_en
+
+
+_whitespace_re = re.compile(r'\s+')
+_abbreviations_en = [(re.compile('\\b%s\\.' % x[0], re.IGNORECASE), x[1]) for x in [
+    ('mrs', 'misess'), ('mr', 'mister'), ('dr', 'doctor'), ('st', 'saint'),
+    ('co', 'company'), ('jr', 'junior'), ('maj', 'major'), ('gen', 'general'),
+    ('drs', 'doctors'), ('rev', 'reverend'), ('lt', 'lieutenant'), ('hon', 'honorable'),
+    ('sgt', 'sergeant'), ('capt', 'captain'), ('esq', 'esquire'), ('ltd', 'limited'),
+    ('col', 'colonel'), ('ft', 'fort'),
+]]
 
 
 def expand_abbreviations_en(text):
@@ -38,11 +48,3 @@ def german_cleaners(text):
     return text
 
 
-_whitespace_re = re.compile(r'\s+')
-_abbreviations_en = [(re.compile('\\b%s\\.' % x[0], re.IGNORECASE), x[1]) for x in [
-    ('mrs', 'misess'), ('mr', 'mister'), ('dr', 'doctor'), ('st', 'saint'),
-    ('co', 'company'), ('jr', 'junior'), ('maj', 'major'), ('gen', 'general'),
-    ('drs', 'doctors'), ('rev', 'reverend'), ('lt', 'lieutenant'), ('hon', 'honorable'),
-    ('sgt', 'sergeant'), ('capt', 'captain'), ('esq', 'esquire'), ('ltd', 'limited'),
-    ('col', 'colonel'), ('ft', 'fort'),
-]]

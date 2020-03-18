@@ -2,6 +2,7 @@ import re
 
 from num2words import num2words
 
+
 _decimal_number_re = re.compile(r'([0-9]+[\.,][0-9]+)')
 _number_re = re.compile(r'[0-9]+')
 
@@ -32,3 +33,5 @@ def _expand_number(m):
                    + num2words(num % 100, lang='de')
     else:
         return num2words(num, lang='de')
+
+

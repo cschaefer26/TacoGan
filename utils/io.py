@@ -27,3 +27,8 @@ def progbar(i, total, msg='', size=18):
 def pickle_binary(data: object, file: str):
     with open(file, 'wb') as f:
         pickle.dump(data, f)
+
+
+def unpickle_binary(file: str):
+    with open(file, 'rb') as f:
+        return pickle.load(f)
