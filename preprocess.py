@@ -65,7 +65,7 @@ if __name__ == '__main__':
     val_dataset = dataset[:cfg['n_val']]
 
     pickle_binary(text_dict, paths.data/'text_dict.pkl')
-    pickle_binary(dataset, paths.data/'train_dataset.pkl')
-    pickle_binary(dataset, paths.data/'val_dataset.pkl')
+    pickle_binary(train_dataset, paths.data/'train_dataset.pkl')
+    pickle_binary(val_dataset, paths.data/'val_dataset.pkl')
 
 

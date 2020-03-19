@@ -3,10 +3,12 @@ import torch.nn.functional as F
 import traceback
 from torch import optim
 from torch.utils.data.dataloader import DataLoader
+from torch.utils.tensorboard import SummaryWriter
 
 from audio import Audio
 from dataset import new_audio_datasets
 from model.tacotron import Tacotron
+from utils.decorators import ignore_exception
 from utils.display import plot_mel, plot_attention
 from utils.io import read_config
 from utils.paths import Paths
@@ -35,6 +37,8 @@ class Trainer:
         self.cfg = cfg
         self.paths = Paths()
         self.audio = Audio(cfg)
+        self.writer = SummaryWriter(log_dir=cfg['log_dir'], comment='v1')
+
 
     def train(self, model, optimizer):
         for session_params in self.cfg['training_schedule']:
@@ -48,7 +52,6 @@ class Trainer:
                 self.train_session(model, optimizer, session)
 
     def train_session(self, model, optimizer, session):
-        model.train()
         model.r = session.r
         device = next(model.parameters()).device
 
@@ -61,6 +64,7 @@ class Trainer:
 
                 seqs, mels, stops = seqs.to(device), mels.to(device), stops.to(device)
                 mels = mels.transpose(1, 2)
+                model.train()
                 lin_mels, post_mels, att = model(seqs, mels)
                 lin_loss = F.l1_loss(lin_mels, mels)
                 post_loss = F.l1_loss(post_mels, mels)
@@ -71,38 +75,47 @@ class Trainer:
                 optimizer.step()
                 print(f'{int(model.step)} {float(loss)}')
 
-                if model.step % 2 == 0:
-                    print(f'evaluating at step {model.step}')
-                    self.evaluate(model, session.val_set)
+                self.writer.add_scalar('Loss/train', loss, global_step=model.step)
+                if model.step % 1 == 0:
+                    val_loss = self.evaluate(model, session.val_set)
+                    self.writer.add_scalar('Loss/val', val_loss, global_step=model.step)
+                    print(f'step: {model.step} val_loss: {val_loss}')
 
             if model.step > session.max_step:
                 return
 
-    def evaluate(self, model, val_set):
+    def evaluate(self, model, val_set) -> float:
         model.eval()
         val_loss = 0
-        for i, (seqs, mels, stops, ids, lens) in enumerate(val_set, 1):
+        for i, batch in enumerate(val_set, 1):
+            seqs, mels, stops, ids, lens = batch
             with torch.no_grad():
-                lin_mels, post_mels, att = model(seqs)
+                mels = mels.transpose(1, 2)
+                pred = model(seqs, mels)
+                lin_mels, post_mels, att = pred
                 lin_loss = F.l1_loss(lin_mels, mels)
                 post_loss = F.l1_loss(post_mels, mels)
                 val_loss += lin_loss + post_loss
-            if i == 0:
-                try:
-                    seq = seqs[0].tolist()
-                    _, m_gen, _ = model.generate(seq)
-                    plot_mel(m_gen, f'/tmp/mel_{int(model.step)}_pred')
-                except Exception:
-                    traceback.print_exc()
-                sample_mel = mels[0].detach()[:, :600].numpy()
-                sample_pred = post_mels[0].detach()[:, :600].numpy()
-                sample_att = att[0].detach().numpy()
-                plot_mel(sample_pred, f'/tmp/mel_{int(model.step)}_gta')
-                plot_mel(sample_mel, f'/tmp/mel_{int(model.step)}_target')
-                plot_attention(sample_att, f'/tmp/att_{int(model.step)}')
-        val_loss /= len(val_set)
-        return val_loss
+            if i == 1:
+                self.generate_samples(model, batch, pred)
 
+        val_loss /= len(val_set)
+        return float(val_loss)
+
+    @ignore_exception
+    def generate_samples(self, model, batch, pred):
+        seqs, mels, stops, ids, lens = batch
+        lin_mels, post_mels, att = pred
+        mel_sample = mels[0].detach()[:, :lens[0]].numpy()
+        gta_sample = post_mels[0].detach()[:, :lens[0]].numpy()
+        target_mel = plot_mel(mel_sample)
+        gta_mel = plot_mel(gta_sample)
+        self.writer.add_figure('Mel/target', target_mel)
+        self.writer.add_figure('Mel/ground_truth_aligned', gta_mel)
+        seq = seqs[0].tolist()
+        _, m_gen, _ = model.generate(seq)
+        gen_mel = plot_mel(m_gen)
+        self.writer.add_figure('Mel/generated', gen_mel)
 
 
 if __name__ == '__main__':
