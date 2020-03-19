@@ -47,7 +47,7 @@ if __name__ == '__main__':
     preprocessor = Preprocessor(audio, paths.mel)
 
     files = get_files(args.path)
-    n_workers = min(cpu_count(), cfg['n_workers'])
+    n_workers = min(cpu_count()-1, cfg['n_workers'])
     pool = Pool(processes=n_workers)
     map_func = pool.imap_unordered(preprocessor.process_wav, files)
     dataset = []

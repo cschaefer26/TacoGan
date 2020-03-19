@@ -1,5 +1,3 @@
-# Currently from https://github.com/fatchord/WaveRNN for a first test
-
 import os
 import numpy as np
 import torch
@@ -311,14 +309,8 @@ class Tacotron(nn.Module):
 
     def forward(self, x, m, generate_gta=False):
         device = next(self.parameters()).device  # use same device as parameters
-
-        self.step += 1
-
-        if generate_gta:
-            self.eval()
-        else:
-            self.train()
-
+        if self.training:
+            self.step += 1
         batch_size, _, steps  = m.size()
 
         # Initialise all hidden states and pack into tuple

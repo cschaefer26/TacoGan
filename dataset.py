@@ -74,6 +74,7 @@ def new_audio_datasets(paths: Paths, batch_size, r, cfg):
                            collate_fn=lambda batch: collate_fn(batch, r),
                            batch_size=batch_size,
                            sampler=None,
+                           shuffle=True,
                            num_workers=1,
                            pin_memory=True)
 
@@ -81,7 +82,9 @@ def new_audio_datasets(paths: Paths, batch_size, r, cfg):
                          collate_fn=lambda batch: collate_fn(batch, r),
                          batch_size=batch_size,
                          sampler=None,
+                         shuffle=False,
                          num_workers=1,
+                         drop_last=False,
                          pin_memory=True)
 
     return train_set, val_set
@@ -89,7 +92,6 @@ def new_audio_datasets(paths: Paths, batch_size, r, cfg):
 
 def collate_fn(batch: tuple, r: int) -> tuple:
     seqs, mels, ids, mel_lens = zip(*batch)
-    mels = [m * 2. - 1. for m in mels] # normalize between -1 and 1
     seq_lens = [len(seq) for seq in seqs]
     max_seq_len = max(seq_lens)
     stops = [_new_stops(seq) for seq in seqs]
@@ -98,6 +100,7 @@ def collate_fn(batch: tuple, r: int) -> tuple:
         max_mel_len += r - max_mel_len % r
     seqs = _to_tensor_1d(seqs, max_seq_len)
     stops = _to_tensor_1d(stops, max_seq_len)
+    mels = [m * 2. - 1. for m in mels] # normalize between -1 and 1
     mels = _to_tensor_2d(mels, max_mel_len)
     return seqs, mels, stops, ids, mel_lens
 
