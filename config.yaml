@@ -28,3 +28,4 @@ training_schedule:
   - [5, 1e-4, 20, 8]
   - [2, 1e-4, 30, 8]
 log_dir: /tmp/tacogan
+steps_to_eval: 10

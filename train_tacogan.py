@@ -38,10 +38,11 @@ class Trainer:
         self.paths = Paths()
         self.audio = Audio(cfg)
         self.writer = SummaryWriter(log_dir=cfg['log_dir'], comment='v1')
-
+        self.steps_to_eval = cfg['steps_to_eval']
+        self.schedule = cfg['training_schedule']
 
     def train(self, model, optimizer):
-        for session_params in self.cfg['training_schedule']:
+        for session_params in self.schedule:
             r, lr, max_step, bs = session_params
             if model.step < max_step:
                 train_set, val_set = new_audio_datasets(
@@ -76,10 +77,9 @@ class Trainer:
                 print(f'{int(model.step)} {float(loss)}')
 
                 self.writer.add_scalar('Loss/train', loss, global_step=model.step)
-                if model.step % 1 == 0:
+                if model.step % self.steps_to_eval == 0:
                     val_loss = self.evaluate(model, session.val_set)
                     self.writer.add_scalar('Loss/val', val_loss, global_step=model.step)
-                    print(f'step: {model.step} val_loss: {val_loss}')
 
             if model.step > session.max_step:
                 return
@@ -106,16 +106,23 @@ class Trainer:
     def generate_samples(self, model, batch, pred):
         seqs, mels, stops, ids, lens = batch
         lin_mels, post_mels, att = pred
-        mel_sample = mels[0].detach()[:, :lens[0]].numpy()
+        mel_sample = mels.transpose(1, 2)[0].detach()[:, :lens[0]].numpy()
         gta_sample = post_mels[0].detach()[:, :lens[0]].numpy()
         target_mel = plot_mel(mel_sample)
         gta_mel = plot_mel(gta_sample)
         self.writer.add_figure('Mel/target', target_mel)
         self.writer.add_figure('Mel/ground_truth_aligned', gta_mel)
+        target_wav = self.audio.griffinlim(target_mel, 32)
+        gta_wav = self.audio.griffinlim(gta_mel, 32)
+        self.writer.add_audio('Wav/target', target_wav)
+        self.writer.add_audio('Wav/ground_truth_aligned', gta_wav)
         seq = seqs[0].tolist()
         _, m_gen, _ = model.generate(seq)
         gen_mel = plot_mel(m_gen)
         self.writer.add_figure('Mel/generated', gen_mel)
+        gen_wav = self.audio.griffinlim(gen_mel, 32)
+        self.writer.add_audio('Wav/generated', gen_wav)
+
 
 
 if __name__ == '__main__':

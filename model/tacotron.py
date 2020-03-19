@@ -311,7 +311,7 @@ class Tacotron(nn.Module):
         device = next(self.parameters()).device  # use same device as parameters
         if self.training:
             self.step += 1
-        batch_size, _, steps  = m.size()
+        batch_size, _, steps = m.size()
 
         # Initialise all hidden states and pack into tuple
         attn_hidden = torch.zeros(batch_size, self.decoder_dims, device=device)
@@ -418,8 +418,6 @@ class Tacotron(nn.Module):
         # For easy visualisation
         attn_scores = torch.cat(attn_scores, 1)
         attn_scores = attn_scores.cpu().data.numpy()[0]
-
-        self.train()
 
         return mel_outputs, linear, attn_scores
 
