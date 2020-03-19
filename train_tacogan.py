@@ -106,21 +106,24 @@ class Trainer:
     def generate_samples(self, model, batch, pred):
         seqs, mels, stops, ids, lens = batch
         lin_mels, post_mels, att = pred
-        mel_sample = mels.transpose(1, 2)[0].detach()[:, :lens[0]].numpy()
+        mel_sample = mels[:, :lens[0]].transpose(1, 2)[0].detach().numpy()
         gta_sample = post_mels[0].detach()[:, :lens[0]].numpy()
+        # mels
         target_mel = plot_mel(mel_sample)
         gta_mel = plot_mel(gta_sample)
         self.writer.add_figure('Mel/target', target_mel)
         self.writer.add_figure('Mel/ground_truth_aligned', gta_mel)
-        target_wav = self.audio.griffinlim(mel_sample, 32)
-        gta_wav = self.audio.griffinlim(gta_sample, 32)
+        # wavs
+        target_wav = self.audio.griffinlim((mel_sample.T + 1.) / 2., 32)
+        gta_wav = self.audio.griffinlim((gta_sample.T + 1.) / 2., 32)
         self.writer.add_audio('Wav/target', target_wav)
         self.writer.add_audio('Wav/ground_truth_aligned', gta_wav)
+        # generated
         seq = seqs[0].tolist()
         _, gen_sample, _ = model.generate(seq)
         gen_mel = plot_mel(gen_sample)
         self.writer.add_figure('Mel/generated', gen_mel)
-        gen_wav = self.audio.griffinlim(gen_sample, 32)
+        gen_wav = self.audio.griffinlim((gen_sample.T + 1.) / 2., 32)
         self.writer.add_audio('Wav/generated', gen_wav)
 
 

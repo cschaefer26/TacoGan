@@ -1,6 +1,8 @@
 import librosa
 import numpy as np
 
+from utils.io import read_config
+
 
 class Audio:
 
@@ -61,7 +63,7 @@ class Audio:
         return np.clip(mel, 0, 1)
 
     def _denormalize(self, mel):
-        return np.clip(mel, 0, 1) * self.min_db + self.min_db
+        return np.clip(mel, 0, 1) * -self.min_db + self.min_db
 
     def _compress(self, mel):
         mel = np.maximum(1e-5, mel)
@@ -70,3 +72,11 @@ class Audio:
     def _decompress(self, mel):
         return np.power(10.0, mel / self.ref_db)
 
+if __name__ == '__main__':
+
+    cfg = read_config('config.yaml')
+    audio = Audio(cfg)
+    wav = audio.load_wav('/Users/cschaefe/datasets/LJSpeech/LJSpeech-1.1/wavs/LJ040-0046.wav')
+    mel = audio.wav_to_mel(wav)
+    wav = audio.griffinlim(mel)
+    audio.save_wav(wav, '/tmp/testwav.wav')
