@@ -1,12 +1,9 @@
 from typing import List, Dict
 import torch
-import pickle
 import numpy as np
 from pathlib import Path
 
 from torch.utils.data import Dataset, DataLoader
-from torch.utils.data.sampler import Sampler
-
 from text.text_cleaner import english_cleaners, german_cleaners
 from text.tokenizer import Tokenizer
 from utils.io import unpickle_binary
@@ -43,22 +40,22 @@ def new_audio_datasets(paths: Paths, batch_size, r, cfg):
     val_path = str(paths.data/'val_dataset.pkl')
     train_dataset = unpickle_binary(train_path)
     val_dataset = unpickle_binary(val_path)
-    train_dataset = [d for d in train_dataset if d[1] <= cfg['max_mel_len']]
-    val_dataset = [d for d in val_dataset if d[1] <= cfg['max_mel_len']]
+    train_dataset = [d for d in train_dataset if d[1] <= cfg.max_mel_len]
+    val_dataset = [d for d in val_dataset if d[1] <= cfg.max_mel_len]
     train_ids, train_lens = zip(*train_dataset)
     val_ids, val_lens = zip(*val_dataset)
     text_path = str(paths.data/'text_dict.pkl')
     text_dict = unpickle_binary(text_path)
 
-    if cfg['cleaners'] == 'english_cleaners':
+    if cfg.cleaners == 'english_cleaners':
         cleaners = english_cleaners
-    elif cfg['cleaners'] == 'german_cleaners':
+    elif cfg.cleaners == 'german_cleaners':
         cleaners = german_cleaners
     else:
-        cl = cfg['cleaners']
+        cl = cfg.cleaners
         raise ValueError(f'cleaners not supported: {cl}')
 
-    tokenizer = Tokenizer(cleaners, cfg['symbols'])
+    tokenizer = Tokenizer(cleaners, cfg.symbols)
 
     train_dataset = AudioDataset(mel_path=paths.mel,
                                  mel_ids=train_ids,

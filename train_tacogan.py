@@ -77,7 +77,7 @@ class Trainer:
                 optimizer.step()
                 print(f'{int(model.step)} {float(loss)}')
 
-                if model.step % cfg['steps_to_checkpoint'] == 0:
+                if model.step % cfg.steps_to_checkpoint == 0:
                     self.save_model(model, optimizer, step=model.get_step())
 
                 self.writer.add_scalar('Loss/train', loss, model.get_step())
