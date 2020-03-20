@@ -4,7 +4,7 @@ import os
 import unittest
 from pathlib import Path
 from audio import Audio
-from utils.io import read_config
+from utils.io import load_config
 
 
 class TestAudio(unittest.TestCase):
@@ -14,7 +14,7 @@ class TestAudio(unittest.TestCase):
         current_dir = Path(current_dir)
         config_path = current_dir/'test_config.yaml'
         self.wav_path = current_dir/'resources'/'small_sample.wav'
-        self.cfg = read_config(config_path)
+        self.cfg = load_config(config_path)
         self.audio = Audio(self.cfg)
 
     def test_wav_to_mel(self):

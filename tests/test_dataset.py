@@ -5,7 +5,7 @@ from pathlib import Path
 from audio import Audio
 from dataset import AudioDataset, collate_fn
 from text.tokenizer import Tokenizer
-from utils.io import read_config
+from utils.io import load_config
 
 
 class TestDataset(unittest.TestCase):
@@ -15,7 +15,7 @@ class TestDataset(unittest.TestCase):
         current_dir = Path(current_dir)
         config_path = current_dir/'test_config.yaml'
         self.mel_path = current_dir/'resources'
-        self.cfg = read_config(config_path)
+        self.cfg = load_config(config_path)
         self.audio = Audio(self.cfg)
 
     def test_audio_dataset(self):

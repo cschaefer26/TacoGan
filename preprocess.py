@@ -6,7 +6,7 @@ import numpy as np
 from pathlib import Path
 from audio import Audio
 from utils.paths import Paths
-from utils.io import read_config, get_files, progbar, pickle_binary
+from utils.io import load_config, get_files, progbar, pickle_binary
 from multiprocessing import Pool, cpu_count
 
 
@@ -40,7 +40,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Preprocessing script that generates mel spectrograms.')
     parser.add_argument('--path', '-p', help='Point to the data path, expects LJSpeech-like folder.')
     args = parser.parse_args()
-    cfg = read_config('config.yaml')
+    cfg = load_config('config.yaml')
 
     audio = Audio(cfg)
     paths = Paths()

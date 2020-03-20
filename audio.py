@@ -1,7 +1,7 @@
 import librosa
 import numpy as np
 
-from utils.io import read_config
+from utils.io import load_config
 
 
 class Audio:
@@ -74,7 +74,7 @@ class Audio:
 
 if __name__ == '__main__':
 
-    cfg = read_config('config.yaml')
+    cfg = load_config('config.yaml')
     audio = Audio(cfg)
     wav = audio.load_wav('/Users/cschaefe/datasets/LJSpeech/LJSpeech-1.1/wavs/LJ040-0046.wav')
     mel = audio.wav_to_mel(wav)

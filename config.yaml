@@ -15,17 +15,28 @@ n_workers: 16
 symbols: "!'(),.:;?_- ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜäöüabcdefghijklmnopqrstuvwxyz"
 cleaners: 'english_cleaners'
 
-# GENERAL
-seed: 42
-
 # DATASET
-n_val: 200
+seed: 42
+n_val: 100
 max_mel_len: 1200
 
 # TRAINING
 training_schedule:
-  - [10, 1e-3, 10, 32]
-  - [5, 1e-4, 20, 8]
-  - [2, 1e-4, 30, 8]
+  - [10, 1e-3, 100_000, 32]
+  - [5,  1e-4, 20, 8]
+  - [2,  1e-4, 30, 8]
 log_dir: /tmp/tacogan
-steps_to_eval: 5
+steps_to_eval: 100
+steps_to_checkpoint: 10
+
+# MODEL
+embed_dims: 256
+encoder_dims: 128
+decoder_dims: 256
+postnet_dims: 128
+encoder_K: 16
+lstm_dims: 512
+postnet_K: 8
+num_highways: 4
+dropout: 0.5
+stop_threshold: -3.4

@@ -7,5 +7,21 @@ fmin: 40
 min_db: -100
 ref_db: 20
 
-# preprocessing
+# TEXT
+symbols: "!'(),.:;?_- ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜäöüabcdefghijklmnopqrstuvwxyz"
+cleaners: 'english_cleaners'
+
+# PREPROCESSING
 n_workers: 16
+
+# MODEL
+embed_dims: 5
+encoder_dims: 2
+decoder_dims: 3
+postnet_dims: 2
+encoder_K: 1
+lstm_dims: 12
+postnet_K: 2
+num_highways: 1
+dropout: 0.5
+stop_threshold: -3.4

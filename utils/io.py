@@ -1,12 +1,20 @@
+import os
+import shutil
 import sys
 import pickle
 import ruamel.yaml
 from pathlib import Path
 
 
-def read_config(path: str) -> dict:
+def load_config(path: str) -> dict:
     with open(path, 'r', encoding='utf-8') as f:
         return ruamel.yaml.load(f, Loader=ruamel.yaml.Loader)
+
+
+def save_config(cfg: dict, path: str) -> None:
+    yaml = ruamel.yaml.YAML()
+    with open(path, 'w') as f:
+        yaml.dump(cfg, f)
 
 
 def get_files(path: str, extension='.wav'):
@@ -32,3 +40,10 @@ def pickle_binary(data: object, file: str):
 def unpickle_binary(file: str):
     with open(file, 'rb') as f:
         return pickle.load(f)
+
+
+def create_dir(path: str, overwrite=False):
+    if overwrite and os.path.exists(path):
+        shutil.rmtree(path)
+    os.makedirs(path, exist_ok=True)
+

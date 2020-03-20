@@ -459,3 +459,20 @@ class Tacotron(nn.Module):
         if print_out:
             print('Trainable Parameters: %.3fM' % parameters)
         return parameters
+
+    @classmethod
+    def from_config(cls, cfg: dict):
+        return Tacotron(embed_dims=cfg['embed_dims'],
+                        num_chars=len(cfg['symbols'])+1,
+                        encoder_dims=cfg['encoder_dims'],
+                        decoder_dims=cfg['decoder_dims'],
+                        n_mels=cfg['n_mels'],
+                        fft_bins=cfg['n_mels'],
+                        postnet_dims=cfg['postnet_dims'],
+                        encoder_K=cfg['encoder_K'],
+                        lstm_dims=cfg['lstm_dims'],
+                        postnet_K=cfg['postnet_K'],
+                        num_highways=cfg['num_highways'],
+                        dropout=cfg['dropout'],
+                        stop_threshold=cfg['stop_threshold'])
+
