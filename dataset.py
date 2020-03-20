@@ -97,7 +97,6 @@ def collate_fn(batch: tuple, r: int) -> tuple:
         max_mel_len += r - max_mel_len % r
     seqs = _to_tensor_1d(seqs, max_seq_len)
     stops = _to_tensor_1d(stops, max_seq_len)
-    mels = [m * 2. - 1. for m in mels] # normalize between -1 and 1
     mels = _to_tensor_2d(mels, max_mel_len)
     return seqs, mels, stops, ids, mel_lens
 

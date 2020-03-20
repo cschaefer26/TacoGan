@@ -60,9 +60,11 @@ class Audio:
 
     def _normalize(self, mel):
         mel = (mel - self.min_db) / -self.min_db
-        return np.clip(mel, 0, 1)
+        mel =  np.clip(mel, 0, 1)
+        return mel * 2. - 1.
 
     def _denormalize(self, mel):
+        mel = (mel + 1.) / 2.
         return np.clip(mel, 0, 1) * -self.min_db + self.min_db
 
     def _compress(self, mel):
@@ -76,7 +78,7 @@ if __name__ == '__main__':
 
     cfg = Config.load('config.yaml')
     audio = Audio(cfg)
-    wav = audio.load_wav('/Users/cschaefe/datasets/LJSpeech/LJSpeech-1.1/wavs/LJ040-0046.wav')
+    wav = audio.load_wav('/Users/cschaefe/datasets/LJSpeech/LJSpeech-1.1/wavs/LJ040-0045.wav')
     mel = audio.wav_to_mel(wav)
     wav = audio.griffinlim(mel)
     audio.save_wav(wav, '/tmp/testwav.wav')

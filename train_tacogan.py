@@ -130,8 +130,8 @@ class Trainer:
         self.writer.add_figure('Mel/ground_truth_aligned', gta_fig, model.step)
         self.writer.add_figure('Attention/ground_truth_aligned', att_fig, model.step)
 
-        target_wav = self.audio.griffinlim((mel_sample.T + 1.) / 2., 32)
-        gta_wav = self.audio.griffinlim((gta_sample.T + 1.) / 2., 32)
+        target_wav = self.audio.griffinlim(mel_sample.T, 32)
+        gta_wav = self.audio.griffinlim(gta_sample.T, 32)
         self.writer.add_audio(
             tag='Wav/target', snd_tensor=target_wav,
             global_step=model.step, sample_rate=self.audio.sample_rate)
@@ -143,7 +143,7 @@ class Trainer:
         _, gen_sample, _ = model.generate(seq, steps=lens[0])
         gen_mel = plot_mel(gen_sample)
         self.writer.add_figure('Mel/generated', gen_mel, model.step)
-        gen_wav = self.audio.griffinlim((gen_sample.T + 1.) / 2., 32)
+        gen_wav = self.audio.griffinlim(gen_sample.T, 32)
         self.writer.add_audio(
             tag='Wav/generated', snd_tensor=gen_wav,
             global_step=model.step, sample_rate=self.audio.sample_rate)

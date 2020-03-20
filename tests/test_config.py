@@ -16,7 +16,6 @@ class TestConfig(unittest.TestCase):
         cfg = Config.load(tmp_dir/'config.yaml')
         self.assertEqual(22050, cfg.sample_rate)
 
-    # noinspection PyUnresolvedReferences
     def test_override(self):
         cfg = Config(sample_rate=22050, steps_to_eval=10)
         cfg_2 = Config(sample_rate=40000, steps_to_eval=100)

@@ -38,7 +38,7 @@ class TestDataset(unittest.TestCase):
         self.assertEqual(101, mel_len)
 
     def test_collate_fn(self):
-        mels = (np.zeros((2, 2), dtype=np.float),
+        mels = (-np.ones((2, 2), dtype=np.float),
                 np.ones((3, 2), dtype=np.float))
         seqs = ([1, 2], [1, 2, 3])
         ids = ('mel_1', 'mel_2')

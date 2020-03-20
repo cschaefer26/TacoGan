@@ -35,7 +35,8 @@ class TestModelIO(unittest.TestCase):
             self.assertAlmostEqual(2e-5, param_group['lr'], places=10)
         self.assertEqual('english_cleaners', cfg_2.cleaners)
 
-    def _assert_equal_models(self, model_1, model_2):
+    @staticmethod
+    def _assert_equal_models(model_1, model_2):
         items_1 = model_1.state_dict().items()
         items_2 = model_2.state_dict().items()
         for key_item_1, key_item_2 in zip(items_1, items_2):

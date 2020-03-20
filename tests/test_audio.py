@@ -21,4 +21,4 @@ class TestAudio(unittest.TestCase):
         wav, sr = librosa.load(self.wav_path)
         mel = self.audio.wav_to_mel(wav)
         sum_mel = float(np.sum(mel))
-        self.assertAlmostEqual(4885.517, sum_mel, places=3)
+        self.assertAlmostEqual(1691.0345458984375, sum_mel, places=6)
