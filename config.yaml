@@ -27,7 +27,7 @@ training_schedule:
   - [2,  1e-4, 30, 8]
 log_dir: /tmp/tacogan
 steps_to_eval: 100
-steps_to_checkpoint: 10
+steps_to_checkpoint: 100
 
 # MODEL
 embed_dims: 256

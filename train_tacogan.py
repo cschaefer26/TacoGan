@@ -78,9 +78,9 @@ class Trainer:
                 print(f'{int(model.step)} {float(loss)}')
 
                 if model.step % cfg['steps_to_checkpoint'] == 0:
-                    self.save_model(model, optimizer, step=model.step)
+                    self.save_model(model, optimizer, step=model.get_step())
 
-                self.writer.add_scalar('Loss/train', loss, model.step)
+                self.writer.add_scalar('Loss/train', loss, model.get_step())
                 if model.step % self.steps_to_eval == 0:
                     val_loss = self.evaluate(model, session.val_set)
                     self.writer.add_scalar('Loss/val', val_loss, model.step)
@@ -143,7 +143,7 @@ class Trainer:
             global_step=model.step, sample_rate=self.audio.sample_rate)
 
         seq = seqs[0].tolist()
-        _, gen_sample, _ = model.generate(seq)
+        _, gen_sample, _ = model.generate(seq, steps=lens[0])
         gen_mel = plot_mel(gen_sample)
         self.writer.add_figure('Mel/generated', gen_mel, model.step)
         gen_wav = self.audio.griffinlim((gen_sample.T + 1.) / 2., 32)

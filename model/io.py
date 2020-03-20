@@ -13,7 +13,7 @@ from utils.io import create_dir, save_config, load_config
 def save_model(model: Tacotron, optimizer: Adam, cfg: dict, path: Path) -> None:
     assert str(path).endswith('.zip'), 'Model path should end with .zip!'
     path = path.parent/path.stem
-    tmp_dir = Path(str(path) + '_tmp_save')
+    tmp_dir = Path(str(path) + '_save_tmp')
     create_dir(tmp_dir, overwrite=True)
     torch.save(model.state_dict(), tmp_dir/'model.pyt')
     torch.save(optimizer.state_dict(), tmp_dir/'optimizer.pyt')
@@ -24,7 +24,7 @@ def save_model(model: Tacotron, optimizer: Adam, cfg: dict, path: Path) -> None:
 
 def load_model(path: Path, device='cpu') -> tuple:
     device = torch.device(device)
-    tmp_dir = Path(str(path) + '_tmp_load')
+    tmp_dir = Path(str(path) + '_load_tmp')
     shutil.unpack_archive(str(path), extract_dir=tmp_dir)
     cfg = load_config(tmp_dir/'config.yaml')
 
