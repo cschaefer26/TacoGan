@@ -74,11 +74,11 @@ class Audio:
     def _decompress(self, mel):
         return np.power(10.0, mel / self.ref_db)
 
-if __name__ == '__main__':
 
+if __name__ == '__main__':
     cfg = Config.load('config.yaml')
     audio = Audio(cfg)
-    wav = audio.load_wav('/Users/cschaefe/datasets/LJSpeech/LJSpeech-1.1/wavs/LJ040-0045.wav')
+    wav = audio.load_wav('/Users/cschaefe/datasets/LJSpeech/LJSpeech-1.1/wavs/LJ050-0278.wav')
     mel = audio.wav_to_mel(wav)
     wav = audio.griffinlim(mel)
     audio.save_wav(wav, '/tmp/testwav.wav')

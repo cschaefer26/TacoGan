@@ -5,8 +5,9 @@ from typing import Tuple
 import numpy as np
 from pathlib import Path
 from audio import Audio
+from utils.config import Config
 from utils.paths import Paths
-from utils.io import load_config, get_files, progbar, pickle_binary
+from utils.io import get_files, progbar, pickle_binary
 from multiprocessing import Pool, cpu_count
 
 
@@ -40,14 +41,14 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Preprocessing script that generates mel spectrograms.')
     parser.add_argument('--path', '-p', help='Point to the data path, expects LJSpeech-like folder.')
     args = parser.parse_args()
-    cfg = load_config('config.yaml')
+    cfg = Config.load('config.yaml')
 
     audio = Audio(cfg)
     paths = Paths()
     preprocessor = Preprocessor(audio, paths.mel)
 
     files = get_files(args.path)
-    n_workers = min(cpu_count()-1, cfg['n_workers'])
+    n_workers = min(cpu_count()-1, cfg.n_workers)
     pool = Pool(processes=n_workers)
     map_func = pool.imap_unordered(preprocessor.process_wav, files)
     dataset = []
@@ -59,10 +60,10 @@ if __name__ == '__main__':
         progbar(i, len(files), f'{i}/{len(files)}')
 
     dataset = [d for d in dataset if d[0] in text_dict]
-    random = Random(cfg['seed'])
+    random = Random(cfg.seed)
     random.shuffle(dataset)
-    train_dataset = dataset[cfg['n_val']:]
-    val_dataset = dataset[:cfg['n_val']]
+    train_dataset = dataset[cfg.n_val:]
+    val_dataset = dataset[:cfg.n_val]
 
     pickle_binary(text_dict, paths.data/'text_dict.pkl')
     pickle_binary(train_dataset, paths.data/'train_dataset.pkl')

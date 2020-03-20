@@ -13,7 +13,7 @@ class TestDataset(unittest.TestCase):
     def setUp(self) -> None:
         current_dir = os.path.dirname(os.path.abspath(__file__))
         current_dir = Path(current_dir)
-        config_path = current_dir/'test_config.yaml'
+        config_path = current_dir/'resources'/'test_config.yaml'
         self.mel_path = current_dir/'resources'
         self.cfg = Config.load(config_path)
         self.audio = Audio(self.cfg)

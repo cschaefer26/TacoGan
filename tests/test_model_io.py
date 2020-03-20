@@ -17,7 +17,7 @@ class TestModelIO(unittest.TestCase):
         self.tmp_dir = tempfile.TemporaryDirectory(prefix='TestModelIO')
         current_dir = os.path.dirname(os.path.abspath(__file__))
         current_dir = Path(current_dir)
-        self.config_path = current_dir/'test_config.yaml'
+        self.config_path = current_dir/'resources'/'test_config.yaml'
 
     def tearDown(self) -> None:
         self.tmp_dir.cleanup()
