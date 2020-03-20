@@ -10,9 +10,9 @@ from audio import Audio
 from dataset import new_audio_datasets
 from model.io import save_model, load_model
 from model.tacotron import Tacotron
+from utils.config import Config
 from utils.decorators import ignore_exception
 from utils.display import plot_mel, plot_attention
-from utils.io import load_config
 from utils.paths import Paths
 
 
@@ -35,13 +35,13 @@ class Session:
 
 class Trainer:
 
-    def __init__(self, cfg):
+    def __init__(self, cfg: Config):
         self.cfg = cfg
         self.paths = Paths()
         self.audio = Audio(cfg)
-        self.writer = SummaryWriter(log_dir=cfg['log_dir'], comment='v1')
-        self.steps_to_eval = cfg['steps_to_eval']
-        self.schedule = cfg['training_schedule']
+        self.writer = SummaryWriter(log_dir=cfg.log_dir, comment='v1')
+        self.steps_to_eval = cfg.steps_to_eval
+        self.schedule = cfg.training_schedule
 
     def train(self, model, optimizer):
         for session_params in self.schedule:
@@ -166,7 +166,7 @@ if __name__ == '__main__':
         model, optimizer, cfg = load_model(latest_ckpt, device)
     else:
         print('\nInitialising new model from config...\n')
-        cfg = load_config('config.yaml')
+        cfg = Config.load('config.yaml')
         model = Tacotron.from_config(cfg).to(device)
         optimizer = optim.Adam(model.parameters())
 

@@ -20,7 +20,7 @@ seed: 42
 n_val: 100
 max_mel_len: 1200
 
-# TRAINING
+# TRAINING (will be overridden in config from loaded models)
 training_schedule:
   - [10, 1e-3, 100_000, 32]
   - [5,  1e-4, 20, 8]

@@ -6,17 +6,6 @@ import ruamel.yaml
 from pathlib import Path
 
 
-def load_config(path: str) -> dict:
-    with open(path, 'r', encoding='utf-8') as f:
-        return ruamel.yaml.load(f, Loader=ruamel.yaml.Loader)
-
-
-def save_config(cfg: dict, path: str) -> None:
-    yaml = ruamel.yaml.YAML()
-    with open(path, 'w') as f:
-        yaml.dump(cfg, f)
-
-
 def get_files(path: str, extension='.wav'):
     path = Path(path).expanduser().resolve()
     return list(path.rglob(f'*{extension}'))

@@ -1,7 +1,5 @@
 import unittest
 
-from text.numbers_de import normalize_numbers_de
-from text.numbers_en import normalize_numbers_en
 from text.text_cleaner import english_cleaners
 from text.tokenizer import Tokenizer
 

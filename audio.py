@@ -1,20 +1,20 @@
 import librosa
 import numpy as np
 
-from utils.io import load_config
+from utils.config import Config
 
 
 class Audio:
 
-    def __init__(self, cfg: dict):
-        self.n_mels = cfg['n_mels']
-        self.sample_rate = cfg['sample_rate']
-        self.hop_length = cfg['hop_length']
-        self.win_length = cfg['win_length']
-        self.n_fft = cfg['n_fft']
-        self.fmin = cfg['fmin']
-        self.min_db = cfg['min_db']
-        self.ref_db = cfg['ref_db']
+    def __init__(self, cfg: Config):
+        self.n_mels = cfg.n_mels
+        self.sample_rate = cfg.sample_rate
+        self.hop_length = cfg.hop_length
+        self.win_length = cfg.win_length
+        self.n_fft = cfg.n_fft
+        self.fmin = cfg.fmin
+        self.min_db = cfg.min_db
+        self.ref_db = cfg.ref_db
 
     def load_wav(self, path):
         wav, _ = librosa.load(path, sr=self.sample_rate)
@@ -74,7 +74,7 @@ class Audio:
 
 if __name__ == '__main__':
 
-    cfg = load_config('config.yaml')
+    cfg = Config.load('config.yaml')
     audio = Audio(cfg)
     wav = audio.load_wav('/Users/cschaefe/datasets/LJSpeech/LJSpeech-1.1/wavs/LJ040-0046.wav')
     mel = audio.wav_to_mel(wav)
