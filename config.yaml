@@ -20,14 +20,14 @@ seed: 42
 n_val: 100
 max_mel_len: 1200
 
-# TRAINING (will be overridden in config from loaded models)
+# TRAINING (overrides loaded model config)
 training_schedule:
   - [10, 1e-3, 100_000, 32]
   - [5,  1e-4, 20, 8]
   - [2,  1e-4, 30, 8]
 log_dir: /tmp/tacogan
 steps_to_eval: 100
-steps_to_checkpoint: 100
+steps_to_checkpoint: 1_000
 
 # MODEL
 embed_dims: 256

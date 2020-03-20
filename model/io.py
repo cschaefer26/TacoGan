@@ -1,9 +1,7 @@
-import os
 import shutil
 from pathlib import Path
 
 import torch
-from torch.optim import Adam
 from torch.optim.adam import Adam
 
 from model.tacotron import Tacotron
@@ -23,7 +21,7 @@ def save_model(model: Tacotron, optimizer: Adam, cfg: Config, path: Path) -> Non
     shutil.rmtree(tmp_dir)
 
 
-def load_model(path: Path, device='cpu') -> tuple:
+def load_model(path: Path, device='cpu', verbose=True) -> tuple:
     device = torch.device(device)
     tmp_dir = Path(str(path) + '_load_tmp')
     shutil.unpack_archive(str(path), extract_dir=tmp_dir)
@@ -37,6 +35,7 @@ def load_model(path: Path, device='cpu') -> tuple:
     state_dict = torch.load(tmp_dir/'optimizer.pyt', device)
     optimizer.load_state_dict(state_dict)
     shutil.rmtree(tmp_dir)
+
     return model, optimizer, cfg
 
 

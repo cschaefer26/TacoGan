@@ -1,6 +1,5 @@
 import torch
 import torch.nn.functional as F
-import traceback
 import os
 from torch import optim
 from torch.utils.data.dataloader import DataLoader
@@ -40,11 +39,9 @@ class Trainer:
         self.paths = Paths()
         self.audio = Audio(cfg)
         self.writer = SummaryWriter(log_dir=cfg.log_dir, comment='v1')
-        self.steps_to_eval = cfg.steps_to_eval
-        self.schedule = cfg.training_schedule
 
     def train(self, model, optimizer):
-        for session_params in self.schedule:
+        for session_params in self.cfg.training_schedule:
             r, lr, max_step, bs = session_params
             if model.step < max_step:
                 train_set, val_set = new_audio_datasets(
@@ -81,7 +78,7 @@ class Trainer:
                     self.save_model(model, optimizer, step=model.get_step())
 
                 self.writer.add_scalar('Loss/train', loss, model.get_step())
-                if model.step % self.steps_to_eval == 0:
+                if model.step % self.cfg.steps_to_eval == 0:
                     val_loss = self.evaluate(model, session.val_set)
                     self.writer.add_scalar('Loss/val', val_loss, model.step)
 
