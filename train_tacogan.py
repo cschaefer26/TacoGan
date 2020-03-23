@@ -74,23 +74,16 @@ class Trainer:
 
         loss_avg = Averager()
 
-        for epoch in range(1000):
-            block_duration = 0
+        while model.step <= session.max_step:
+
             for i, (seqs, mels, stops, ids, lens) in enumerate(session.train_set):
                 seqs, mels, stops, lens = \
                     seqs.to(device), mels.to(device), stops.to(device), lens.to(device)
                 t_start = time.time()
-                mels = mels.transpose(1, 2)
                 block_step = model.get_step() % cfg.steps_to_eval + 1
 
                 model.train()
                 lin_mels, post_mels, att = model(seqs, mels)
-                #lin_loss = F.l1_loss(lin_mels, mels)
-                #post_loss = F.l1_loss(post_mels, mels)
-
-                mels = mels.transpose(1, 2)
-                lin_mels = lin_mels.transpose(1, 2)
-                post_mels = post_mels.transpose(1, 2)
 
                 lin_loss = self.criterion(lin_mels, mels, lens)
                 post_loss = self.criterion(post_mels, mels, lens)
@@ -103,8 +96,7 @@ class Trainer:
                 loss.backward()
                 optimizer.step()
 
-                block_duration += time.time() - t_start
-                steps_per_s = block_step / block_duration
+                steps_per_s = block_step / (time.time() - t_start)
                 self.writer.add_scalar('Loss/train', loss, model.get_step())
 
                 msg = f'{block_step}/{cfg.steps_to_eval} | Step: {model.get_step()} ' \
@@ -121,7 +113,6 @@ class Trainer:
                     self.save_model(model, optimizer, step=model.get_step())
                     msg += f'| Val Loss: {float(val_loss):#0.4} \n'
                     stream(msg)
-                    block_duration = 0
                     loss_avg.reset()
 
             if model.step > session.max_step:
@@ -133,7 +124,6 @@ class Trainer:
         for i, batch in enumerate(val_set, 1):
             seqs, mels, stops, ids, lens = batch
             with torch.no_grad():
-                mels = mels.transpose(1, 2)
                 pred = model(seqs, mels)
                 lin_mels, post_mels, att = pred
                 lin_loss = F.l1_loss(lin_mels, mels)
@@ -158,10 +148,9 @@ class Trainer:
     def generate_samples(self, model, batch, pred):
         seqs, mels, stops, ids, lens = batch
         lin_mels, post_mels, att = pred
-        mel_sample = mels[:, :lens[0]].transpose(1, 2)[0].detach().numpy()
-        gta_sample = post_mels[0].detach()[:, :lens[0]].numpy()
+        mel_sample = mels.transpose(1, 2)[0, :lens[0]].detach().numpy()
+        gta_sample = post_mels.transpose(1, 2)[0, :lens[0]].detach().numpy()
         att_sample = att[0].detach().numpy()
-
         target_fig = plot_mel(mel_sample)
         gta_fig = plot_mel(gta_sample)
         att_fig = plot_attention(att_sample)
@@ -169,8 +158,8 @@ class Trainer:
         self.writer.add_figure('Mel/ground_truth_aligned', gta_fig, model.step)
         self.writer.add_figure('Attention/ground_truth_aligned', att_fig, model.step)
 
-        target_wav = self.audio.griffinlim(mel_sample.T, 32)
-        gta_wav = self.audio.griffinlim(gta_sample.T, 32)
+        target_wav = self.audio.griffinlim(mel_sample, 32)
+        gta_wav = self.audio.griffinlim(gta_sample, 32)
         self.writer.add_audio(
             tag='Wav/target', snd_tensor=target_wav,
             global_step=model.step, sample_rate=self.audio.sample_rate)
@@ -182,7 +171,7 @@ class Trainer:
         _, gen_sample, _ = model.generate(seq, steps=lens[0])
         gen_mel = plot_mel(gen_sample)
         self.writer.add_figure('Mel/generated', gen_mel, model.step)
-        gen_wav = self.audio.griffinlim(gen_sample.T, 32)
+        gen_wav = self.audio.griffinlim(gen_sample, 32)
         self.writer.add_audio(
             tag='Wav/generated', snd_tensor=gen_wav,
             global_step=model.step, sample_rate=self.audio.sample_rate)

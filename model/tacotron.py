@@ -309,6 +309,8 @@ class Tacotron(nn.Module):
         self.decoder.r = self.decoder.r.new_tensor(value, requires_grad=False)
 
     def forward(self, x, m, generate_gta=False):
+        m = m.transpose(1, 2)
+
         device = next(self.parameters()).device  # use same device as parameters
         if self.training:
             self.step += 1
@@ -360,6 +362,8 @@ class Tacotron(nn.Module):
         attn_scores = torch.cat(attn_scores, 1)
         # attn_scores = attn_scores.cpu().data.numpy()
 
+        mel_outputs = mel_outputs.transpose(1, 2)
+        linear = linear.transpose(1, 2)
         return mel_outputs, linear, attn_scores
 
     def generate(self, x, steps=2000):
