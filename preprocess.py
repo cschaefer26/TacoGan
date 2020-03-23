@@ -23,7 +23,7 @@ class Preprocessor:
         wav = audio.load_wav(path)
         mel = audio.wav_to_mel(wav)
         np.save(self.mel_path/f'{mel_id}.npy', mel, allow_pickle=False)
-        return mel_id, mel.shape[-1]
+        return mel_id, mel.shape[0]
 
 
 def read_metafile(path: str):
@@ -43,8 +43,10 @@ if __name__ == '__main__':
         description='Preprocessing script that generates mel spectrograms.')
     parser.add_argument(
         '--path', '-p', help='Point to the data path, expects LJSpeech-like folder.')
+    parser.add_argument(
+        '--config', '-c', help='Point to the config.', default='config.yaml')
     args = parser.parse_args()
-    cfg = Config.load(args.path)
+    cfg = Config.load(args.config)
 
     audio = Audio(cfg)
     paths = Paths()
@@ -60,8 +62,8 @@ if __name__ == '__main__':
     display_params([
         ('Num Train', len(files)-cfg.n_val), ('Num Val', cfg.n_val),
         ('Num Mels', cfg.n_mels), ('Win Length', cfg.win_length),
-        ('Hop Length', cfg.n_mels), ('Min Frequency', cfg.fmin),
-        ('Sample Rate', cfg.sample_rate), ('CPU Usage', f'{cfg.n_workers}/{cpu_count()}'),
+        ('Hop Length', cfg.hop_length), ('Min Frequency', cfg.fmin),
+        ('Sample Rate', cfg.sample_rate), ('CPU Usage', f'{n_workers}/{cpu_count()}'),
     ])
     for i, (mel_id, mel_len) in enumerate(map_func, 1):
         dataset += [(mel_id, mel_len)]
@@ -72,9 +74,12 @@ if __name__ == '__main__':
     random.shuffle(dataset)
     train_dataset = dataset[cfg.n_val:]
     val_dataset = dataset[:cfg.n_val]
+    # sort val dataset longest to shortest
+    val_dataset.sort(key=lambda d: -d[1])
 
     pickle_binary(text_dict, paths.data/'text_dict.pkl')
     pickle_binary(train_dataset, paths.data/'train_dataset.pkl')
     pickle_binary(val_dataset, paths.data/'val_dataset.pkl')
 
+    print('done.')
 

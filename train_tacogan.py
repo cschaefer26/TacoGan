@@ -12,28 +12,11 @@ from audio import Audio
 from dataset import new_audio_datasets
 from model.io import save_model, load_model
 from model.tacotron import Tacotron
+from utils.common import Averager
 from utils.config import Config
 from utils.decorators import ignore_exception
-from utils.display import plot_mel, plot_attention, progbar, display_params, stream
+from utils.display import plot_mel, plot_attention, display_params, stream
 from utils.paths import Paths
-
-
-class Averager:
-
-    def __init__(self):
-        self.count = 0
-        self.val = 0.
-
-    def add(self, val):
-        self.val += float(val)
-        self.count += 1
-
-    def reset(self):
-        self.val = 0.
-        self.count = 0
-
-    def get(self):
-        return self.val / self.count
 
 
 class Session:

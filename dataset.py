@@ -83,6 +83,7 @@ def new_audio_datasets(paths: Paths, batch_size, r, cfg):
                          num_workers=1,
                          drop_last=False,
                          pin_memory=True)
+
     return train_set, val_set
 
 
@@ -97,6 +98,7 @@ def collate_fn(batch: tuple, r: int) -> tuple:
     seqs = _to_tensor_1d(seqs, max_seq_len)
     stops = _to_tensor_1d(stops, max_seq_len)
     mels = _to_tensor_2d(mels, max_mel_len)
+    mel_lens = torch.tensor(mel_lens)
     return seqs, mels, stops, ids, mel_lens
 
 

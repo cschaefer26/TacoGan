@@ -2,32 +2,33 @@ from typing import List
 import sys
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.figure import Figure
 
 
-def plot_mel(mel: np.array) -> None:
+def plot_mel(mel: np.array) -> Figure:
     mel = np.flip(mel, axis=0)
     fig = plt.figure(figsize=(12, 6))
     plt.imshow(mel, interpolation='nearest', cmap='plasma', aspect='auto')
     return fig
 
 
-def plot_attention(attn: np.array) -> None:
+def plot_attention(attn: np.array) -> Figure:
     fig = plt.figure(figsize=(12, 6))
     plt.imshow(attn.T, interpolation='nearest', aspect='auto')
     return fig
 
 
-def stream(msg: str):
+def stream(msg: str) -> None:
     sys.stdout.write(f'\r{msg}')
 
 
-def progbar(i, total, msg='', size=14):
+def progbar(i, total, msg='', size=14) -> None:
     done = (i * size) // total
     bar = '█' * done + '░' * (size - done)
     stream(f'{bar} {msg} ')
 
 
-def display_params(params: List[tuple]):
+def display_params(params: List[tuple]) -> None:
     it = iter(params)
     if len(params) % 2 != 0:
         params.append(('', ''))
