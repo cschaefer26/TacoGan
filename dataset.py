@@ -91,19 +91,19 @@ def collate_fn(batch: tuple, r: int) -> tuple:
     seqs, mels, ids, mel_lens = zip(*batch)
     seq_lens = [len(seq) for seq in seqs]
     max_seq_len = max(seq_lens)
-    stops = [_new_stops(seq) for seq in seqs]
+    stops = [_new_stops(l) for l in mel_lens]
     max_mel_len = max(mel_lens)
     if max_mel_len % r != 0:
         max_mel_len += r - max_mel_len % r
     seqs = _to_tensor_1d(seqs, max_seq_len)
-    stops = _to_tensor_1d(stops, max_seq_len)
+    stops = _to_tensor_1d(stops, max_mel_len)
     mels = _to_tensor_2d(mels, max_mel_len)
     mel_lens = torch.tensor(mel_lens)
     return seqs, mels, stops, ids, mel_lens
 
 
-def _new_stops(seq):
-    stops = np.zeros((len(seq)))
+def _new_stops(mel_len):
+    stops = np.zeros(mel_len)
     stops[-1] = 1
     return stops
 

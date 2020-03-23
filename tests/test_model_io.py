@@ -7,7 +7,7 @@ import torch
 from torch.optim.adam import Adam
 
 from model.io import save_model, load_model
-from model.tacotron import Tacotron
+from model.tacotron_new import Tacotron
 from utils.config import Config
 
 

@@ -13,16 +13,32 @@ def pad_mask(lens, max_len):
     lens = lens.unsqueeze(1)
     lens = lens.expand_as(seq_range)
     mask = seq_range < lens
-    return mask.unsqueeze(2).float()
+    return mask.float()
 
 
 class MaskedL1(torch.nn.Module):
 
-    def __call__(self, x, target, lens):
+    def forward(self, x, target, lens):
         target.requires_grad = False
         max_len = target.size(1)
         mask = pad_mask(lens, max_len)
-        mask = mask.expand_as(x)
+        mask = mask.unsqueeze(2).expand_as(x)
         loss = F.l1_loss(
-            x * mask, target * mask, reduction="sum")
+            x * mask, target * mask, reduction='sum')
+        return loss / mask.sum()
+
+
+class MaskedBCE(torch.nn.Module):
+
+    def __init__(self, pos_weight=10):
+        super().__init__()
+        self.register_buffer('pos_weight', torch.tensor(pos_weight))
+
+    def forward(self, x, target, lens):
+        target.requires_grad = False
+        max_len = target.size(1)
+        mask = pad_mask(lens, max_len).float()
+        loss = F.binary_cross_entropy_with_logits(
+            x.float(), target.float(), weight=mask.float(),
+            pos_weight=self.pos_weight, reduction='sum')
         return loss / mask.sum()

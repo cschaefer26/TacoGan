@@ -57,5 +57,6 @@ class TestDataset(unittest.TestCase):
         expected_stops = np.array([[0, 1, 0], [0, 0, 1]])
         np.testing.assert_almost_equal(stops, expected_stops, decimal=8)
 
-        self.assertEqual((2, 3), mel_lens)
+        expected_lens = np.array([2, 3])
+        np.testing.assert_almost_equal(mel_lens, expected_lens, decimal=8)
 

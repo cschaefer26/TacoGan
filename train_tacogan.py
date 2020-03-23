@@ -12,7 +12,7 @@ from audio import Audio
 from dataset import new_audio_datasets
 from losses import MaskedL1
 from model.io import save_model, load_model
-from model.tacotron import Tacotron
+from model.tacotron_new import Tacotron
 from utils.common import Averager
 from utils.config import Config
 from utils.decorators import ignore_exception
@@ -73,8 +73,9 @@ class Trainer:
             g['lr'] = session.lr
 
         loss_avg = Averager()
+        duration_avg = Averager()
 
-        while model.step <= session.max_step:
+        while model.get_step() <= session.max_step:
 
             for i, (seqs, mels, stops, ids, lens) in enumerate(session.train_set):
                 seqs, mels, stops, lens = \
@@ -96,7 +97,8 @@ class Trainer:
                 loss.backward()
                 optimizer.step()
 
-                steps_per_s = block_step / (time.time() - t_start)
+                duration_avg.add(time.time() - t_start)
+                steps_per_s = 1. / duration_avg.get()
                 self.writer.add_scalar('Loss/train', loss, model.get_step())
 
                 msg = f'{block_step}/{cfg.steps_to_eval} | Step: {model.get_step()} ' \
@@ -112,6 +114,7 @@ class Trainer:
                     self.save_model(model, optimizer, step=model.get_step())
                     stream(msg + f'| Val Loss: {float(val_loss):#0.4} \n')
                     loss_avg.reset()
+                    duration_avg.reset()
 
             if model.step > session.max_step:
                 return
@@ -122,6 +125,8 @@ class Trainer:
         for i, batch in enumerate(val_set, 1):
             stream(msg + f'| Evaluating {i}/{len(val_set)}')
             seqs, mels, stops, ids, lens = batch
+            seqs, mels, stops, lens = \
+                seqs.to(device), mels.to(device), stops.to(device), lens.to(device)
             with torch.no_grad():
                 pred = model(seqs, mels)
                 lin_mels, post_mels, att = pred

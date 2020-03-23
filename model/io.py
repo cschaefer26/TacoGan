@@ -4,7 +4,7 @@ from pathlib import Path
 import torch
 from torch.optim.adam import Adam
 
-from model.tacotron import Tacotron
+from model.tacotron_new import Tacotron
 from utils.config import Config
 from utils.io import create_dir
 
