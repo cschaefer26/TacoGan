@@ -83,7 +83,6 @@ def new_audio_datasets(paths: Paths, batch_size, r, cfg):
                          num_workers=1,
                          drop_last=False,
                          pin_memory=True)
-    print(f'len train {len(train_set)} val {len(val_set)}')
     return train_set, val_set
 
 

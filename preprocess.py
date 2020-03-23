@@ -6,8 +6,9 @@ import numpy as np
 from pathlib import Path
 from audio import Audio
 from utils.config import Config
+from utils.display import display_params, progbar
 from utils.paths import Paths
-from utils.io import get_files, progbar, pickle_binary
+from utils.io import get_files, pickle_binary
 from multiprocessing import Pool, cpu_count
 
 
@@ -38,10 +39,12 @@ def read_metafile(path: str):
 
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser(description='Preprocessing script that generates mel spectrograms.')
-    parser.add_argument('--path', '-p', help='Point to the data path, expects LJSpeech-like folder.')
+    parser = argparse.ArgumentParser(
+        description='Preprocessing script that generates mel spectrograms.')
+    parser.add_argument(
+        '--path', '-p', help='Point to the data path, expects LJSpeech-like folder.')
     args = parser.parse_args()
-    cfg = Config.load('config.yaml')
+    cfg = Config.load(args.path)
 
     audio = Audio(cfg)
     paths = Paths()
@@ -54,7 +57,12 @@ if __name__ == '__main__':
     dataset = []
 
     text_dict = read_metafile(args.path)
-
+    display_params([
+        ('Num Train', len(files)-cfg.n_val), ('Num Val', cfg.n_val),
+        ('Num Mels', cfg.n_mels), ('Win Length', cfg.win_length),
+        ('Hop Length', cfg.n_mels), ('Min Frequency', cfg.fmin),
+        ('Sample Rate', cfg.sample_rate), ('CPU Usage', f'{cfg.n_workers}/{cpu_count()}'),
+    ])
     for i, (mel_id, mel_len) in enumerate(map_func, 1):
         dataset += [(mel_id, mel_len)]
         progbar(i, len(files), f'{i}/{len(files)}')

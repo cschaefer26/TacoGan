@@ -1,3 +1,6 @@
+import argparse
+import time
+
 import torch
 import torch.nn.functional as F
 import os
@@ -11,19 +14,39 @@ from model.io import save_model, load_model
 from model.tacotron import Tacotron
 from utils.config import Config
 from utils.decorators import ignore_exception
-from utils.display import plot_mel, plot_attention
+from utils.display import plot_mel, plot_attention, progbar, display_params, stream
 from utils.paths import Paths
+
+
+class Averager:
+
+    def __init__(self):
+        self.count = 0
+        self.val = 0.
+
+    def add(self, val):
+        self.val += float(val)
+        self.count += 1
+
+    def reset(self):
+        self.val = 0.
+        self.count = 0
+
+    def get(self):
+        return self.val / self.count
 
 
 class Session:
 
     def __init__(self,
+                 index: int,
                  r: int,
                  lr: int,
                  max_step: int,
                  bs: int,
                  train_set: DataLoader,
                  val_set: DataLoader) -> None:
+        self.index = index
         self.r = r
         self.lr = lr
         self.max_step = max_step
@@ -41,38 +64,58 @@ class Trainer:
         self.writer = SummaryWriter(log_dir=cfg.log_dir, comment='v1')
 
     def train(self, model, optimizer):
-        for session_params in self.cfg.training_schedule:
+        for i, session_params in enumerate(self.cfg.training_schedule, 1):
             r, lr, max_step, bs = session_params
             if model.step < max_step:
                 train_set, val_set = new_audio_datasets(
                     paths=paths, batch_size=bs, r=r, cfg=cfg)
                 session = Session(
-                    r=r, lr=lr, max_step=max_step,
+                    index=i, r=r, lr=lr, max_step=max_step,
                     bs=bs, train_set=train_set, val_set=val_set)
                 self.train_session(model, optimizer, session)
 
     def train_session(self, model, optimizer, session):
         model.r = session.r
+        cfg = self.cfg
         device = next(model.parameters()).device
+        display_params([
+            ('Session', session.index), ('Reduction Factor', session.r),
+            ('Max Step', session.max_step), ('Learning Rate', session.lr),
+            ('Batch Size', session.bs), ('Steps per Epoch', len(session.train_set))
+        ])
 
         for g in optimizer.param_groups:
             g['lr'] = session.lr
 
-        for epoch in range(1000):
+        loss_avg = Averager()
 
-            for i, (seqs, mels, stops, ids, lens) in enumerate(session.train_set, 1):
+        for epoch in range(1000):
+            block_duration = 0
+            for i, (seqs, mels, stops, ids, lens) in enumerate(session.train_set):
                 seqs, mels, stops = seqs.to(device), mels.to(device), stops.to(device)
+                t_start = time.time()
                 mels = mels.transpose(1, 2)
+                block_step = model.get_step() % cfg.steps_to_eval + 1
+
                 model.train()
                 lin_mels, post_mels, att = model(seqs, mels)
                 lin_loss = F.l1_loss(lin_mels, mels)
                 post_loss = F.l1_loss(post_mels, mels)
                 loss = lin_loss + post_loss
+                loss_avg.add(loss)
+
                 torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
-                print(f'{int(model.step)} {float(loss)}')
+
+                block_duration += time.time() - t_start
+                steps_per_s = block_step / block_duration
+
+                msg = f'{block_step}/{cfg.steps_to_eval} | Step: {model.get_step()} ' \
+                      f'| {steps_per_s:#.2} steps/s | Loss: {loss_avg.get():#.4} '
+
+                stream(msg)
 
                 if model.step % cfg.steps_to_checkpoint == 0:
                     self.save_model(model, optimizer, step=model.get_step())
@@ -81,6 +124,10 @@ class Trainer:
                 if model.step % self.cfg.steps_to_eval == 0:
                     val_loss = self.evaluate(model, session.val_set)
                     self.writer.add_scalar('Loss/val', val_loss, model.step)
+                    msg += f'| Val Loss: {float(val_loss):#0.4} \n'
+                    stream(msg)
+                    block_duration = 0
+                    loss_avg.reset()
 
             # checkpoint latest model after epoch is finished
             self.save_model(model, optimizer)
@@ -149,21 +196,30 @@ class Trainer:
             global_step=model.step, sample_rate=self.audio.sample_rate)
 
 
+def get_device() -> torch.device:
+    if torch.cuda.is_available():
+        return torch.device('cuda')
+    else:
+        return torch.device('cpu')
+
+
 if __name__ == '__main__':
 
-    if torch.cuda.is_available():
-        device = torch.device('cuda')
-    else:
-        device = torch.device('cpu')
-
+    parser = argparse.ArgumentParser(
+        description='Entrypoint for training the TacoGan model.')
+    parser.add_argument(
+        '--config', '-c', help='Point to the config.', default='config.yaml')
+    args = parser.parse_args()
+    device = get_device()
     paths = Paths()
     latest_ckpt = paths.ckpt/'latest_model.zip'
+    cfg = Config.load(args.config)
     if os.path.exists(latest_ckpt):
         print(f'Loading model from {latest_ckpt}')
-        model, optimizer, cfg = load_model(latest_ckpt, device)
+        model, optimizer, cfg_loaded = load_model(latest_ckpt, device)
+        cfg = cfg_loaded.update(cfg)
     else:
-        print('\nInitialising new model from config...\n')
-        cfg = Config.load('config.yaml')
+        print(f'\nInitialising new model from {args.config}\n')
         model = Tacotron.from_config(cfg).to(device)
         optimizer = optim.Adam(model.parameters())
 

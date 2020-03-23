@@ -26,17 +26,17 @@ training_schedule:
   - [5,  1e-4, 10_000, 8]
   - [2,  1e-4, 30, 8]
 log_dir: /tmp/tacogan
-steps_to_eval: 100
+steps_to_eval: 10
 steps_to_checkpoint: 1_000
 
 # MODEL
-embed_dims: 256
+embed_dims: 16
 encoder_dims: 128
 decoder_dims: 256
 postnet_dims: 128
-encoder_K: 16
-lstm_dims: 512
-postnet_K: 8
+encoder_K: 2
+lstm_dims: 16
+postnet_K: 2
 num_highways: 4
 dropout: 0.5
 stop_threshold: -3.4

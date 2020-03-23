@@ -1,5 +1,5 @@
 from typing import List
-
+import sys
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -15,6 +15,16 @@ def plot_attention(attn: np.array) -> None:
     fig = plt.figure(figsize=(12, 6))
     plt.imshow(attn.T, interpolation='nearest', aspect='auto')
     return fig
+
+
+def stream(msg: str):
+    sys.stdout.write(f'\r{msg}')
+
+
+def progbar(i, total, msg='', size=14):
+    done = (i * size) // total
+    bar = '█' * done + '░' * (size - done)
+    stream(f'{bar} {msg} ')
 
 
 def display_params(params: List[tuple]):
@@ -47,4 +57,4 @@ def display_params(params: List[tuple]):
     print('| ' + upper_str)
     print('+-' + lines_str)
     print('| ' + lower_str)
-    print('+-' + lines_str)
+    print('+-' + lines_str + '\n')

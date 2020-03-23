@@ -33,8 +33,9 @@ class Config:
         with open(str(path), 'w') as f:
             yaml.dump(self.__dict__, f)
 
-    def update(self, new_cfg):
+    def update(self, new_cfg) -> 'Config':
         """ Overrides training params """
         for p in self.training_params:
             if p in new_cfg.__dict__:
                 self.__dict__[p] = getattr(new_cfg, p)
+        return self
