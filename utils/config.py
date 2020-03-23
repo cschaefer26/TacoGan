@@ -30,7 +30,7 @@ class Config:
 
     def save(self, path: Path) -> None:
         yaml = ruamel.yaml.YAML()
-        with open(str(path), 'w') as f:
+        with open(str(path), 'w', encoding='utf-8') as f:
             yaml.dump(self.__dict__, f)
 
     def update(self, new_cfg) -> 'Config':
