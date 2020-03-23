@@ -10,6 +10,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 from audio import Audio
 from dataset import new_audio_datasets
+from losses import MaskedL1
 from model.io import save_model, load_model
 from model.tacotron import Tacotron
 from utils.common import Averager
@@ -45,6 +46,7 @@ class Trainer:
         self.paths = Paths()
         self.audio = Audio(cfg)
         self.writer = SummaryWriter(log_dir=cfg.log_dir, comment='v1')
+        self.criterion = MaskedL1()
 
     def train(self, model, optimizer):
         for i, session_params in enumerate(self.cfg.training_schedule, 1):
@@ -62,7 +64,7 @@ class Trainer:
         cfg = self.cfg
         device = next(model.parameters()).device
         display_params([
-            ('Session', session.index), ('Reduction Factor', session.r),
+            ('Session', session.index), ('Reduction', session.r),
             ('Max Step', session.max_step), ('Learning Rate', session.lr),
             ('Batch Size', session.bs), ('Steps per Epoch', len(session.train_set))
         ])
@@ -75,15 +77,24 @@ class Trainer:
         for epoch in range(1000):
             block_duration = 0
             for i, (seqs, mels, stops, ids, lens) in enumerate(session.train_set):
-                seqs, mels, stops = seqs.to(device), mels.to(device), stops.to(device)
+                seqs, mels, stops, lens = \
+                    seqs.to(device), mels.to(device), stops.to(device), lens.to(device)
                 t_start = time.time()
                 mels = mels.transpose(1, 2)
                 block_step = model.get_step() % cfg.steps_to_eval + 1
 
                 model.train()
                 lin_mels, post_mels, att = model(seqs, mels)
-                lin_loss = F.l1_loss(lin_mels, mels)
-                post_loss = F.l1_loss(post_mels, mels)
+                #lin_loss = F.l1_loss(lin_mels, mels)
+                #post_loss = F.l1_loss(post_mels, mels)
+
+                mels = mels.transpose(1, 2)
+                lin_mels = lin_mels.transpose(1, 2)
+                post_mels = post_mels.transpose(1, 2)
+
+                lin_loss = self.criterion(lin_mels, mels, lens)
+                post_loss = self.criterion(post_mels, mels, lens)
+
                 loss = lin_loss + post_loss
                 loss_avg.add(loss)
 
@@ -94,6 +105,7 @@ class Trainer:
 
                 block_duration += time.time() - t_start
                 steps_per_s = block_step / block_duration
+                self.writer.add_scalar('Loss/train', loss, model.get_step())
 
                 msg = f'{block_step}/{cfg.steps_to_eval} | Step: {model.get_step()} ' \
                       f'| {steps_per_s:#.2} steps/s | Loss: {loss_avg.get():#.4} '
@@ -103,17 +115,14 @@ class Trainer:
                 if model.step % cfg.steps_to_checkpoint == 0:
                     self.save_model(model, optimizer, step=model.get_step())
 
-                self.writer.add_scalar('Loss/train', loss, model.get_step())
                 if model.step % self.cfg.steps_to_eval == 0:
                     val_loss = self.evaluate(model, session.val_set)
                     self.writer.add_scalar('Loss/val', val_loss, model.step)
+                    self.save_model(model, optimizer, step=model.get_step())
                     msg += f'| Val Loss: {float(val_loss):#0.4} \n'
                     stream(msg)
                     block_duration = 0
                     loss_avg.reset()
-
-            # checkpoint latest model after epoch is finished
-            self.save_model(model, optimizer)
 
             if model.step > session.max_step:
                 return
