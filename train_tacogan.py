@@ -101,27 +101,26 @@ class Trainer:
 
                 msg = f'{block_step}/{cfg.steps_to_eval} | Step: {model.get_step()} ' \
                       f'| {steps_per_s:#.2} steps/s | Loss: {loss_avg.get():#.4} '
-
                 stream(msg)
 
                 if model.step % cfg.steps_to_checkpoint == 0:
                     self.save_model(model, optimizer, step=model.get_step())
 
                 if model.step % self.cfg.steps_to_eval == 0:
-                    val_loss = self.evaluate(model, session.val_set)
+                    val_loss = self.evaluate(model, session.val_set, msg)
                     self.writer.add_scalar('Loss/val', val_loss, model.step)
                     self.save_model(model, optimizer, step=model.get_step())
-                    msg += f'| Val Loss: {float(val_loss):#0.4} \n'
-                    stream(msg)
+                    stream(msg + f'| Val Loss: {float(val_loss):#0.4} \n')
                     loss_avg.reset()
 
             if model.step > session.max_step:
                 return
 
-    def evaluate(self, model, val_set) -> float:
+    def evaluate(self, model, val_set, msg) -> float:
         model.eval()
         val_loss = 0
         for i, batch in enumerate(val_set, 1):
+            stream(msg + f'| Evaluating {i}/{len(val_set)}')
             seqs, mels, stops, ids, lens = batch
             with torch.no_grad():
                 pred = model(seqs, mels)
