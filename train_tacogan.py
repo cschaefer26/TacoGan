@@ -152,9 +152,9 @@ class Trainer:
     def generate_samples(self, model, batch, pred):
         seqs, mels, stops, ids, lens = batch
         lin_mels, post_mels, att = pred
-        mel_sample = mels.transpose(1, 2)[0, :lens[0]].detach().numpy()
-        gta_sample = post_mels.transpose(1, 2)[0, :lens[0]].detach().numpy()
-        att_sample = att[0].detach().numpy()
+        mel_sample = mels.transpose(1, 2)[0, :lens[0]].detach().cpu().numpy()
+        gta_sample = post_mels.transpose(1, 2)[0, :lens[0]].detach().cpu().numpy()
+        att_sample = att[0].detach().cpu().numpy()
         target_fig = plot_mel(mel_sample)
         gta_fig = plot_mel(gta_sample)
         att_fig = plot_attention(att_sample)
