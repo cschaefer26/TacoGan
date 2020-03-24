@@ -26,7 +26,7 @@ training_schedule:
   - [5,  1e-4, 10_000, 8]
   - [2,  1e-4, 30_000, 8]
 log_dir: /tmp/tacogan
-steps_to_eval: 100
+steps_to_eval: 500
 steps_to_checkpoint: 1_000
 silence_len: 50 # extra mel steps with silence as stopping criterion
 

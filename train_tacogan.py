@@ -175,7 +175,7 @@ class Trainer:
             global_step=model.step, sample_rate=self.audio.sample_rate)
 
         seq = seqs[0].tolist()
-        _, gen_sample, gen_att = model.generate(seq, steps=lens[0])
+        _, gen_sample, att_sample = model.generate(seq, steps=lens[0])
         gen_fig = plot_mel(gen_sample)
         att_fig = plot_attention(att_sample)
         self.writer.add_figure('Attention/generated', att_fig, model.step)
