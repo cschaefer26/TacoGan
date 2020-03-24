@@ -89,7 +89,6 @@ def new_audio_datasets(paths: Paths, batch_size, r, cfg):
 
 def collate_fn(batch: tuple, r: int) -> tuple:
     seqs, mels, ids, mel_lens = zip(*batch)
-    mel_lens = [l + 20 for l in mel_lens]
     seq_lens = [len(seq) for seq in seqs]
     max_seq_len = max(seq_lens)
     stops = [_new_stops(l) for l in mel_lens]
@@ -121,7 +120,7 @@ def _to_tensor_1d(seqs: List[np.array], max_len: int):
 def _to_tensor_2d(arrs: List[np.array], max_len: int):
     arrs_padded = []
     for arr in arrs:
-        arr = np.pad(arr, ((0, max_len - arr.shape[0]), (0, 0)), constant_values=-1, mode='constant')
+        arr = np.pad(arr, ((0, max_len - arr.shape[0]), (0, 0)), mode='constant')
         arrs_padded.append(arr)
     arrs_padded = np.stack(arrs_padded)
     return torch.tensor(arrs_padded, dtype=torch.float32)
