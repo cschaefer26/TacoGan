@@ -100,9 +100,12 @@ class Trainer:
                 duration_avg.add(time.time() - t_start)
                 steps_per_s = 1. / duration_avg.get()
                 self.writer.add_scalar('Loss/train', loss, model.get_step())
+                self.writer.add_scalar('Params/reduction_factor', session.r, model.get_step())
+                self.writer.add_scalar('Params/batch_sze', session.bs, model.get_step())
+                self.writer.add_scalar('Params/learning_rate', session.lr, model.get_step())
 
                 msg = f'{block_step}/{cfg.steps_to_eval} | Step: {model.get_step()} ' \
-                      f'| {steps_per_s:#.2} steps/s | Loss: {loss_avg.get():#.4} '
+                      f'| {steps_per_s:#.2} steps/s | Avg. Loss: {loss_avg.get():#.4} '
                 stream(msg)
 
                 if model.step % cfg.steps_to_checkpoint == 0:
