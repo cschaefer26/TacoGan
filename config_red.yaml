@@ -1,4 +1,4 @@
-config_id: ljspeech_red
+config_id: config_red
 
 # AUDIO
 sample_rate: 22050

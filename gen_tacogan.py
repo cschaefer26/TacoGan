@@ -19,6 +19,7 @@ from utils.common import Averager
 from utils.config import Config
 from utils.decorators import ignore_exception
 from utils.display import plot_mel, plot_attention, display_params, stream
+from utils.io import get_latest_file
 from utils.paths import Paths
 
 
@@ -41,8 +42,15 @@ if __name__ == '__main__':
     args = parser.parse_args()
     device = get_device()
 
-    latest_ckpt = paths.ckpt/'latest_model.zip' if args.model is None else args.model
-    model, optimizer, cfg = load_model(latest_ckpt, device)
+    if args.model is None:
+        model_path = get_latest_file(paths.ckpt, extension='.zip')
+        assert model_path is not None, f'No model could be found in {paths.ckpt}'
+    else:
+        model_path = args.model
+        assert model_path is not None, f'No model could be found at {args.model}'
+
+    print(f'Loading model from {model_path}')
+    model, optimizer, cfg = load_model(model_path, device)
     cleaners = get_cleaners(cfg.cleaners)
     tokenier = Tokenizer(cleaners, cfg.symbols)
     seq = tokenier.encode(args.text)
