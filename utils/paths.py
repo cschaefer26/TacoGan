@@ -8,6 +8,7 @@ class Paths:
 
         self.ckpt = Path('checkpoints').expanduser().resolve()
         self.data = Path('data').expanduser().resolve()
+        self.log = Path('log').expanduser().resolve()
         self.mel = self.data / 'mel'
         self.create_paths()
 

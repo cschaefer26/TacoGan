@@ -1,6 +1,8 @@
 """ adapted from https://github.com/keithito/tacotron """
 
 import re
+from typing import Callable
+
 import unidecode
 
 from text.numbers_de import normalize_numbers_de
@@ -47,4 +49,12 @@ def german_cleaners(text):
     text = collapse_whitespace(text)
     return text
 
+
+def get_cleaners(cleaners_str: str) -> Callable[[str], str]:
+    if cleaners_str == 'english_cleaners':
+        return english_cleaners
+    elif cleaners_str == 'german_cleaners':
+        return german_cleaners
+    else:
+        raise ValueError(f'cleaners not supported: {cleaners_str}')
 

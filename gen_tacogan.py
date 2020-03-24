@@ -13,6 +13,7 @@ from dataset import new_audio_datasets
 from losses import MaskedL1
 from model.io import save_model, load_model
 from model.tacotron_new import Tacotron
+from text.text_cleaner import get_cleaners
 from text.tokenizer import Tokenizer
 from utils.common import Averager
 from utils.config import Config
@@ -41,5 +42,7 @@ if __name__ == '__main__':
     device = get_device()
     latest_ckpt = paths.ckpt/'latest_model.zip'
     model, optimizer, cfg = load_model(latest_ckpt, device)
-    tokenier = Tokenizer(cfg.symbols)
-
+    cleaners = get_cleaners(cfg.cleaners)
+    tokenier = Tokenizer(cleaners, cfg.symbols)
+    seq = tokenier.encode(cfg.text)
+    print(seq)

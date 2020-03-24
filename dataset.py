@@ -4,7 +4,7 @@ import numpy as np
 from pathlib import Path
 
 from torch.utils.data import Dataset, DataLoader
-from text.text_cleaner import english_cleaners, german_cleaners
+from text.text_cleaner import english_cleaners, german_cleaners, get_cleaners
 from text.tokenizer import Tokenizer
 from utils.io import unpickle_binary
 from utils.paths import Paths
@@ -46,14 +46,7 @@ def new_audio_datasets(paths: Paths, batch_size, r, cfg):
     val_ids, val_lens = zip(*val_dataset)
     text_path = str(paths.data/'text_dict.pkl')
     text_dict = unpickle_binary(text_path)
-
-    if cfg.cleaners == 'english_cleaners':
-        cleaners = english_cleaners
-    elif cfg.cleaners == 'german_cleaners':
-        cleaners = german_cleaners
-    else:
-        cl = cfg.cleaners
-        raise ValueError(f'cleaners not supported: {cl}')
+    cleaners = get_cleaners(cfg.cleaners)
 
     tokenizer = Tokenizer(cleaners, cfg.symbols)
 

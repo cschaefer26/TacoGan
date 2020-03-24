@@ -1,5 +1,6 @@
 import argparse
 import time
+from datetime import datetime
 
 import torch
 import torch.nn.functional as F
@@ -92,9 +93,9 @@ class Trainer:
                 loss = lin_loss + post_loss
                 loss_avg.add(loss)
 
-                torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
                 optimizer.zero_grad()
                 loss.backward()
+                torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
                 optimizer.step()
 
                 duration_avg.add(time.time() - t_start)

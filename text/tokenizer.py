@@ -4,9 +4,9 @@ from typing import Callable, List
 class Tokenizer:
 
     def __init__(self,
-                 cleaner: Callable[[str], str],
+                 cleaners: Callable[[str], str],
                  symbols: str) -> None:
-        self.cleaner = cleaner
+        self.cleaner = cleaners
         self.symbols = list(symbols)
         self.symbol_id = {s: i for i, s in enumerate(symbols, 1)}
         self.id_symbol = {i: s for i, s in enumerate(symbols, 1)}
