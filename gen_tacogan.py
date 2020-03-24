@@ -40,9 +40,21 @@ if __name__ == '__main__':
         '--text', '-t', help='Input text.')
     args = parser.parse_args()
     device = get_device()
-    latest_ckpt = paths.ckpt/'latest_model.zip'
+
+    latest_ckpt = paths.ckpt/'latest_model.zip' if args.model is None else args.model
     model, optimizer, cfg = load_model(latest_ckpt, device)
     cleaners = get_cleaners(cfg.cleaners)
     tokenier = Tokenizer(cleaners, cfg.symbols)
-    seq = tokenier.encode(cfg.text)
-    print(seq)
+    seq = tokenier.encode(args.text)
+    mel, post, att = model.generate(seq)
+    audio = Audio(cfg)
+    wav = audio.griffinlim(post)
+
+    display_params([
+        ('Model Step', model.get_step()),
+        ('Reduction', model.r),
+        ('Sample Rate', cfg.sample_rate),
+        ('Hop Length', cfg.hop_length)])
+
+    audio.save_wav(wav, paths.outputs/'sample.wav')
+    print(f'model step: {model.get_step()}')

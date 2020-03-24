@@ -18,6 +18,7 @@ from utils.common import Averager
 from utils.config import Config
 from utils.decorators import ignore_exception
 from utils.display import plot_mel, plot_attention, display_params, stream
+from utils.io import get_latest_file
 from utils.paths import Paths
 
 
@@ -46,7 +47,9 @@ class Trainer:
         self.cfg = cfg
         self.paths = Paths()
         self.audio = Audio(cfg)
-        self.writer = SummaryWriter(log_dir=cfg.log_dir, comment='v1')
+        self.ckpt_path = paths.ckpt/cfg.config_id
+        log_dir = self.ckpt_path/'tensorboard'
+        self.writer = SummaryWriter(log_dir=log_dir, comment='v1')
         self.criterion = MaskedL1()
 
     def train(self, model, optimizer):
@@ -115,7 +118,7 @@ class Trainer:
                 if model.step % self.cfg.steps_to_eval == 0:
                     val_loss = self.evaluate(model, session.val_set, msg)
                     self.writer.add_scalar('Loss/val', val_loss, model.step)
-                    self.save_model(model, optimizer, step=model.get_step())
+                    self.save_model(model, optimizer)
                     stream(msg + f'| Val Loss: {float(val_loss):#0.4} \n')
                     loss_avg.reset()
                     duration_avg.reset()
@@ -146,11 +149,11 @@ class Trainer:
     def save_model(self, model, optimizer, step=None):
         save_model(
             model=model, optimizer=optimizer,
-            cfg=self.cfg, path=self.paths.ckpt/'latest_model.zip')
+            cfg=self.cfg, path=self.ckpt_path/'latest_model.zip')
         if step is not None:
             save_model(
                 model=model, optimizer=optimizer,
-                cfg=self.cfg, path=self.paths.ckpt/f'model_step_{step}.zip')
+                cfg=self.cfg, path=self.ckpt_path/f'model_step_{step}.zip')
 
     @ignore_exception
     def generate_samples(self, model, batch, pred):
@@ -200,17 +203,21 @@ if __name__ == '__main__':
         description='Entrypoint for training the TacoGan model.')
     parser.add_argument(
         '--config', '-c', help='Point to the config.', default='config.yaml')
+
     args = parser.parse_args()
     device = get_device()
     paths = Paths()
-    latest_ckpt = paths.ckpt/'latest_model.zip'
     cfg = Config.load(args.config)
-    if os.path.exists(latest_ckpt):
-        print(f'Loading model from {latest_ckpt}')
+    ckpt_path = paths.ckpt/cfg.config_id
+    print(ckpt_path)
+    latest_ckpt = get_latest_file(ckpt_path, extension='.zip')
+    if latest_ckpt:
+        print(f'\nLoading model from {latest_ckpt}')
         model, optimizer, cfg_loaded = load_model(latest_ckpt, device)
         cfg = cfg_loaded.update(cfg)
     else:
-        print(f'\nInitialising new model from {args.config}\n')
+        print(f'\nInitialising new model from {args.config}')
+        print(f'Checkpoint path: {ckpt_path}')
         model = Tacotron.from_config(cfg).to(device)
         optimizer = optim.Adam(model.parameters())
 

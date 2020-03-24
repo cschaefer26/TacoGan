@@ -1,4 +1,4 @@
-config_id: ljspeech
+config_id: ljspeech_2
 
 # AUDIO
 sample_rate: 22050

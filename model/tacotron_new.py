@@ -407,7 +407,7 @@ class Tacotron(nn.Module):
             mel_outputs.append(mel_frames)
             attn_scores.append(scores)
             # Stop the loop if silent frames present
-            if (mel_frames < self.stop_threshold).all() and t > 10: break
+            if (mel_frames < -0.9).all() and t > 10: break
 
         # Concat the mel outputs into sequence
         mel_outputs = torch.cat(mel_outputs, dim=2)
