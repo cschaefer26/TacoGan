@@ -68,7 +68,7 @@ def new_audio_datasets(paths: Paths, batch_size, r, cfg):
                                tokenizer=tokenizer)
 
     train_set = DataLoader(train_dataset,
-                           collate_fn=lambda batch: collate_fn(batch, r),
+                           collate_fn=lambda batch: collate_fn(batch, r, cfg.silence_len),
                            batch_size=batch_size,
                            sampler=None,
                            shuffle=True,
@@ -76,7 +76,7 @@ def new_audio_datasets(paths: Paths, batch_size, r, cfg):
                            pin_memory=True)
 
     val_set = DataLoader(val_dataset,
-                         collate_fn=lambda batch: collate_fn(batch, r),
+                         collate_fn=lambda batch: collate_fn(batch, r, cfg.silence_len),
                          batch_size=batch_size,
                          sampler=None,
                          shuffle=False,
@@ -87,8 +87,9 @@ def new_audio_datasets(paths: Paths, batch_size, r, cfg):
     return train_set, val_set
 
 
-def collate_fn(batch: tuple, r: int) -> tuple:
+def collate_fn(batch: tuple, r: int, silence_len: int) -> tuple:
     seqs, mels, ids, mel_lens = zip(*batch)
+    mel_lens = [l + silence_len for l in mel_lens]
     seq_lens = [len(seq) for seq in seqs]
     max_seq_len = max(seq_lens)
     stops = [_new_stops(l) for l in mel_lens]
@@ -120,7 +121,8 @@ def _to_tensor_1d(seqs: List[np.array], max_len: int):
 def _to_tensor_2d(arrs: List[np.array], max_len: int):
     arrs_padded = []
     for arr in arrs:
-        arr = np.pad(arr, ((0, max_len - arr.shape[0]), (0, 0)), mode='constant')
+        arr = np.pad(arr, ((0, max_len - arr.shape[0]), (0, 0)),
+                     constant_values=-1, mode='constant')
         arrs_padded.append(arr)
     arrs_padded = np.stack(arrs_padded)
     return torch.tensor(arrs_padded, dtype=torch.float32)

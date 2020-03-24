@@ -28,6 +28,8 @@ training_schedule:
 log_dir: /tmp/tacogan
 steps_to_eval: 10
 steps_to_checkpoint: 1_000
+silence_len: 50 # extra mel steps with silence as stopping criterion
+
 
 # MODEL
 embed_dims: 16
