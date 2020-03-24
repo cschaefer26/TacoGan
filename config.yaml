@@ -40,4 +40,4 @@ lstm_dims: 512
 postnet_K: 8
 num_highways: 4
 dropout: 0.5
-stop_threshold: -3.4
+stop_threshold: -0.8

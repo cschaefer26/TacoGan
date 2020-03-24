@@ -175,9 +175,11 @@ class Trainer:
             global_step=model.step, sample_rate=self.audio.sample_rate)
 
         seq = seqs[0].tolist()
-        _, gen_sample, _ = model.generate(seq, steps=lens[0])
-        gen_mel = plot_mel(gen_sample)
-        self.writer.add_figure('Mel/generated', gen_mel, model.step)
+        _, gen_sample, gen_att = model.generate(seq, steps=lens[0])
+        gen_fig = plot_mel(gen_sample)
+        att_fig = plot_attention(att_sample)
+        self.writer.add_figure('Attention/generated', att_fig, model.step)
+        self.writer.add_figure('Mel/generated', gen_fig, model.step)
         gen_wav = self.audio.griffinlim(gen_sample, 32)
         self.writer.add_audio(
             tag='Wav/generated', snd_tensor=gen_wav,
