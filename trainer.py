@@ -89,7 +89,6 @@ class Trainer:
                 fake = torch.zeros((mels.size(0), mels.size(1))).to(device)
                 real = torch.ones((mels.size(0), mels.size(1))).to(device)
                 t_start = time.time()
-                block_step = tacotron.get_step() % cfg.steps_to_eval + 1
 
                 # train tacotron
                 tacotron.train()
