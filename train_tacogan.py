@@ -4,7 +4,7 @@ import torch
 from torch import optim
 
 from model.gan import GAN
-from model.io import load_model, ModelPackage
+from model.io import  ModelPackage
 from model.tacotron_new import Tacotron
 from trainer import Trainer
 from utils.config import Config

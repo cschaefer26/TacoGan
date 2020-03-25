@@ -8,7 +8,7 @@ from torch.utils.tensorboard import SummaryWriter
 from audio import Audio
 from dataset import new_audio_datasets
 from losses import MaskedL1
-from model.io import save_model, ModelPackage
+from model.io import ModelPackage
 from utils.common import Averager
 from utils.config import Config
 from utils.decorators import ignore_exception
