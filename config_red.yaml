@@ -26,7 +26,7 @@ max_mel_len: 1200
 training_schedule:
   - [10, 1e-3, 5_000, 4]
   - [5,  1e-4, 10_000, 8]
-  - [2,  1e-4, 30, 8]
+  - [2,  1e-4, 30_000, 8]
 log_dir: /tmp/tacogan
 steps_to_eval: 10
 steps_to_checkpoint: 1_000
@@ -44,3 +44,9 @@ postnet_K: 2
 num_highways: 4
 dropout: 0.5
 stop_threshold: -3.4
+
+
+# GAN PARAMS
+gan_conv_dim: 256
+gan_rnn_dim: 256
+gan_dropout: 0.5

@@ -11,7 +11,7 @@ from torch.utils.tensorboard import SummaryWriter
 from audio import Audio
 from dataset import new_audio_datasets
 from losses import MaskedL1
-from model.io import save_model, load_model
+from model.io import save_model, load_model, ModelPackage
 from model.tacotron_new import Tacotron
 from text.text_cleaner import get_cleaners
 from text.tokenizer import Tokenizer
@@ -50,19 +50,19 @@ if __name__ == '__main__':
         assert model_path is not None, f'No model could be found at {args.model}'
 
     print(f'Loading model from {model_path}')
-    model, optimizer, cfg = load_model(model_path, device)
-    cleaners = get_cleaners(cfg.cleaners)
-    tokenier = Tokenizer(cleaners, cfg.symbols)
+    model = ModelPackage.load(model_path, device)
+    cleaners = get_cleaners(model.cfg.cleaners)
+    tokenier = Tokenizer(cleaners, model.cfg.symbols)
     seq = tokenier.encode(args.text)
-    mel, post, att = model.generate(seq)
-    audio = Audio(cfg)
+    mel, post, att = model.tacotron.generate(seq)
+    audio = Audio(model.cfg)
     wav = audio.griffinlim(post)
 
     display_params([
         ('Model Step', model.get_step()),
         ('Reduction', model.r),
-        ('Sample Rate', cfg.sample_rate),
-        ('Hop Length', cfg.hop_length)])
+        ('Sample Rate', model.cfg.sample_rate),
+        ('Hop Length', model.cfg.hop_length)])
 
     audio.save_wav(wav, paths.outputs/'sample.wav')
     print(f'model step: {model.get_step()}')

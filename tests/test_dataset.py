@@ -45,12 +45,12 @@ class TestDataset(unittest.TestCase):
         mel_lens = (2, 3)
         batch = tuple(zip(seqs, mels, ids, mel_lens))
 
-        seqs, mels, stops, ids, mel_lens = collate_fn(batch=batch, r=3)
+        seqs, mels, stops, ids, mel_lens = collate_fn(batch=batch, r=3, silence_len=0)
 
         expected_seqs = np.array([[1, 2, 0], [1, 2, 3]])
         np.testing.assert_almost_equal(seqs, expected_seqs, decimal=8)
 
-        expected_mels = np.array([[[-1, -1], [-1, -1], [0, 0]],
+        expected_mels = np.array([[[-1, -1], [-1, -1], [-1, -1]],
                                   [[1, 1], [1, 1], [1, 1]]])
         np.testing.assert_almost_equal(mels, expected_mels, decimal=8)
 

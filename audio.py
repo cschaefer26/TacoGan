@@ -59,7 +59,7 @@ class Audio:
 
     def _normalize(self, mel):
         mel = (mel - self.min_db) / -self.min_db
-        mel =  np.clip(mel, 0, 1)
+        mel = np.clip(mel, 0, 1)
         return mel * 2. - 1.
 
     def _denormalize(self, mel):
