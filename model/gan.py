@@ -42,10 +42,10 @@ class Generator(nn.Module):
         self.linear = nn.Linear(2 * rnn_dim, n_mels)
 
     def forward(self, x):
-        x.transpose_(1, 2)
+        x = x.transpose(1, 2)
         for conv in self.convs:
             x = conv(x)
-        x.transpose_(1, 2)
+        x = x.transpose(1, 2)
         x, _ = self.gru(x)
         x = self.linear(x)
         return x
@@ -64,10 +64,10 @@ class Discriminator(nn.Module):
         self.linear = nn.Linear(2 * rnn_dim, 1)
 
     def forward(self, x):
-        x.transpose_(1, 2)
+        x = x.transpose(1, 2)
         for conv in self.convs:
             x = conv(x)
-        x.transpose_(1, 2)
+        x = x.transpose(1, 2)
         x, _ = self.gru(x)
         x = self.linear(x)
         return torch.sigmoid(x)
