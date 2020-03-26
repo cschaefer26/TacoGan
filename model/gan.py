@@ -46,8 +46,9 @@ class Generator(nn.Module):
         #for conv in self.convs:
         #    x = conv(x)
         #x = x.transpose(1, 2)
-        x, _ = self.gru(x)
-        x = self.linear(x)
+        x_gru, _ = self.gru(x)
+        x_gru = self.linear(x_gru)
+        x = x + x_gru
         return x
 
 
