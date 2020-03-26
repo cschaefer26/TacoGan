@@ -131,7 +131,7 @@ class Trainer:
                 gen_opti.zero_grad()
                 gen_mels = generator(post_mels)
                 g_l1_loss = self.gen_loss(gen_mels, mels, lens)
-                d_fake = discriminator(gen_mels).squeeze()
+                d_fake = discriminator(gen_mels)
                 d_loss_fake = self.disc_loss(d_fake, real)
                 g_loss = g_l1_loss + d_loss_fake
                 g_loss.backward()
@@ -142,6 +142,7 @@ class Trainer:
                 duration_avg.add(time.time() - t_start)
                 steps_per_s = 1. / duration_avg.get()
                 self.writer.add_scalar('Loss/train_tac', loss, tacotron.get_step())
+                self.writer.add_scalar('Loss/train_gen', g_loss, tacotron.get_step())
                 self.writer.add_scalar('Loss/train_gen', g_loss, tacotron.get_step())
                 self.writer.add_scalar('Loss/train_disc', d_loss, tacotron.get_step())
                 self.writer.add_scalar('Params/reduction_factor', session.r, tacotron.get_step())
