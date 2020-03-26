@@ -61,12 +61,12 @@ class Trainer:
                 self.train_session(model, session)
 
     def train_session(self, model: ModelPackage, session: Session):
-        model.r = session.r
         cfg = self.cfg
         tacotron, gan, generator, discriminator = \
             model.tacotron, model.gan, model.gan.generator, model.gan.discriminator
         taco_opti, gen_opti, disc_opti = \
             model.taco_opti, model.gen_opti, model.disc_opti
+        tacotron.r = session.r
         device = next(tacotron.parameters()).device
         display_params([
             ('Session', session.index), ('Reduction', session.r),
@@ -139,7 +139,7 @@ class Trainer:
                 #torch.nn.utils.clip_grad_norm_(generator.parameters(), 1.0)
                 gen_opti.step()
                 gen_loss_avg.add(g_loss)
-                gen_loss_l1_avg.add(g_loss)
+                gen_loss_l1_avg.add(g_l1_loss)
 
                 duration_avg.add(time.time() - t_start)
                 steps_per_s = 1. / duration_avg.get()
