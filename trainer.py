@@ -127,7 +127,7 @@ class Trainer:
                 d_loss_real = self.disc_loss(d_real, real)
                 d_loss = d_loss_fake + d_loss_real
                 d_loss.backward()
-                #torch.nn.utils.clip_grad_norm_(discriminator.parameters(), 1.0)
+                torch.nn.utils.clip_grad_norm_(discriminator.parameters(), 1.0)
                 disc_opti.step()
                 disc_loss_avg.add(d_loss)
 
