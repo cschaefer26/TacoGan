@@ -103,6 +103,7 @@ class Trainer:
                 lin_mels, post_mels, att = tacotron(seqs, mels)
 
                 gan.zero_grad()
+                tacotron.zero_grad()
                 taco_opti.zero_grad()
                 d_fake = discriminator(post_mels)
                 d_loss_fake_real = self.disc_loss(d_fake, real)
@@ -110,7 +111,6 @@ class Trainer:
                 lin_loss = self.taco_loss(lin_mels, mels, lens)
                 post_loss = self.taco_loss(post_mels, mels, lens)
                 loss = lin_loss + post_loss + cfg.gan_weight * d_loss_fake_real
-                taco_opti.zero_grad()
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(tacotron.parameters(), 1.0)
                 taco_opti.step()
