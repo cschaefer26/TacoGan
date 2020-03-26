@@ -82,6 +82,7 @@ class Trainer:
             g['lr'] = session.lr
 
         taco_loss_avg = Averager()
+        gen_loss_l1_avg = Averager()
         gen_loss_avg = Averager()
         disc_loss_avg = Averager()
         duration_avg = Averager()
@@ -143,6 +144,7 @@ class Trainer:
                 steps_per_s = 1. / duration_avg.get()
                 self.writer.add_scalar('Loss/train_tac', loss, tacotron.get_step())
                 self.writer.add_scalar('Loss/train_gen', g_loss, tacotron.get_step())
+                self.writer.add_scalar('Loss/train_gen_l1', g_l1_loss, tacotron.get_step())
                 self.writer.add_scalar('Loss/train_gen', g_loss, tacotron.get_step())
                 self.writer.add_scalar('Loss/train_disc', d_loss, tacotron.get_step())
                 self.writer.add_scalar('Params/reduction_factor', session.r, tacotron.get_step())
@@ -151,7 +153,8 @@ class Trainer:
 
                 msg = f'Step: {tacotron.get_step()} ' \
                       f'| {steps_per_s:#.2} steps/s | Taco Loss: {taco_loss_avg.get():#.4} ' \
-                      f'| Gen Loss: {gen_loss_avg.get():#.4} | Disc Loss: {disc_loss_avg.get():#.4}'
+                      f'| Gen Loss L1: {gen_loss_l1_avg.get():#.4} | ' \
+                      f'| Gen Loss: {gen_loss_avg.get()} | Disc Loss: {disc_loss_avg.get():#.4}'
                 stream(msg)
 
                 if tacotron.step % cfg.steps_to_checkpoint == 0:
@@ -165,6 +168,7 @@ class Trainer:
                     taco_loss_avg.reset()
                     duration_avg.reset()
                     gen_loss_avg.reset()
+                    gen_loss_l1_avg.reset()
                     disc_loss_avg.reset()
 
             if tacotron.step > session.max_step:
