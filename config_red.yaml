@@ -31,7 +31,7 @@ log_dir: /tmp/tacogan
 steps_to_eval: 100
 steps_to_checkpoint: 1_000
 silence_len: 50 # extra mel steps with silence as stopping criterion
-
+gan_weight: 0.1
 
 # MODEL
 embed_dims: 128

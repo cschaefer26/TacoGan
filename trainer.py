@@ -99,25 +99,29 @@ class Trainer:
                 # train tacotron
                 tacotron.train()
                 gan.train()
+
                 lin_mels, post_mels, att = tacotron(seqs, mels)
+
+                gan.zero_grad()
+                taco_opti.zero_grad()
+                d_fake = discriminator(post_mels)
+                d_loss_fake_real = self.disc_loss(d_fake, real)
 
                 lin_loss = self.taco_loss(lin_mels, mels, lens)
                 post_loss = self.taco_loss(post_mels, mels, lens)
-                loss = lin_loss + post_loss
+                loss = lin_loss + post_loss + cfg.gan_weight * d_loss_fake_real
                 taco_opti.zero_grad()
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(tacotron.parameters(), 1.0)
                 taco_opti.step()
-                taco_loss_avg.add(loss)
-
-                post_mels = post_mels.detach()
+                taco_loss_avg.add(post_loss)
+                gen_loss_avg.add(d_loss_fake_real)
 
                 # train discriminator
+                post_mels = post_mels.detach()
                 gan.zero_grad()
                 disc_opti.zero_grad()
-                with torch.no_grad():
-                    gen_mels = generator(post_mels)
-                d_fake = discriminator(gen_mels)
+                d_fake = discriminator(post_mels)
                 d_real = discriminator(mels)
                 d_loss_fake = self.disc_loss(d_fake, fake)
                 d_loss_real = self.disc_loss(d_real, real)
@@ -127,6 +131,7 @@ class Trainer:
                 disc_opti.step()
                 disc_loss_avg.add(d_loss)
 
+                """
                 # train generator
                 gan.zero_grad()
                 gen_opti.zero_grad()
@@ -140,13 +145,12 @@ class Trainer:
                 gen_opti.step()
                 gen_loss_avg.add(g_loss)
                 gen_loss_l1_avg.add(g_l1_loss)
+                """
 
                 duration_avg.add(time.time() - t_start)
                 steps_per_s = 1. / duration_avg.get()
                 self.writer.add_scalar('Loss/train_tac', loss, tacotron.get_step())
-                self.writer.add_scalar('Loss/train_gen', g_loss, tacotron.get_step())
-                self.writer.add_scalar('Loss/train_gen_l1', g_l1_loss, tacotron.get_step())
-                self.writer.add_scalar('Loss/train_gen', g_loss, tacotron.get_step())
+                self.writer.add_scalar('Loss/train_gen', d_loss_fake_real, tacotron.get_step())
                 self.writer.add_scalar('Loss/train_disc', d_loss, tacotron.get_step())
                 self.writer.add_scalar('Params/reduction_factor', session.r, tacotron.get_step())
                 self.writer.add_scalar('Params/batch_sze', session.bs, tacotron.get_step())
@@ -154,7 +158,6 @@ class Trainer:
 
                 msg = f'Step: {tacotron.get_step()} ' \
                       f'| {steps_per_s:#.2} steps/s | Taco Loss: {taco_loss_avg.get():#.4} ' \
-                      f'| Gen Loss L1: {gen_loss_l1_avg.get():#.4} | ' \
                       f'| Gen Loss: {gen_loss_avg.get()} | Disc Loss: {disc_loss_avg.get():#.4}'
                 stream(msg)
 
@@ -231,9 +234,6 @@ class Trainer:
             global_step=model.tacotron.step, sample_rate=self.audio.sample_rate)
         self.writer.add_audio(
             tag='Wav/ground_truth_aligned', snd_tensor=gta_wav,
-            global_step=model.tacotron.step, sample_rate=self.audio.sample_rate)
-        self.writer.add_audio(
-            tag='Wav/ground_truth_aligned_gan', snd_tensor=gan_wav,
             global_step=model.tacotron.step, sample_rate=self.audio.sample_rate)
 
         seq = seqs[0].tolist()

@@ -48,3 +48,4 @@ stop_threshold: -0.8
 gan_conv_dim: 256
 gan_rnn_dim: 256
 gan_dropout: 0.5
+gan_weight: 0.1
