@@ -2,6 +2,7 @@ import time
 
 import torch
 import torch.nn.functional as F
+from torch.nn import BCELoss
 from torch.utils.data.dataloader import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
@@ -46,7 +47,7 @@ class Trainer:
         self.writer = SummaryWriter(log_dir=log_dir, comment='v1')
         self.taco_loss = MaskedL1()
         self.gen_loss = MaskedL1()
-        self.disc_loss = MaskedBCE()
+        self.disc_loss = BCELoss()
 
     def train(self, model: ModelPackage):
         for i, session_params in enumerate(self.cfg.training_schedule, 1):
@@ -75,6 +76,10 @@ class Trainer:
 
         for g in taco_opti.param_groups:
             g['lr'] = session.lr
+        for g in gen_opti.param_groups:
+            g['lr'] = session.lr
+        for g in disc_opti.param_groups:
+            g['lr'] = session.lr
 
         taco_loss_avg = Averager()
         gen_loss_avg = Averager()
@@ -92,6 +97,7 @@ class Trainer:
 
                 # train tacotron
                 tacotron.train()
+                gan.train()
                 lin_mels, post_mels, att = tacotron(seqs, mels)
 
                 lin_loss = self.taco_loss(lin_mels, mels, lens)
@@ -112,10 +118,11 @@ class Trainer:
                     gen_mels = generator(post_mels)
                 d_fake = discriminator(gen_mels).squeeze()
                 d_real = discriminator(mels).squeeze()
-                d_loss_fake = self.disc_loss(d_fake, fake, lens)
-                d_loss_real = self.disc_loss(d_real, real, lens)
+                d_loss_fake = self.disc_loss(d_fake, fake)
+                d_loss_real = self.disc_loss(d_real, real)
                 d_loss = d_loss_fake + d_loss_real
                 d_loss.backward()
+                #torch.nn.utils.clip_grad_norm_(discriminator.parameters(), 1.0)
                 disc_opti.step()
                 disc_loss_avg.add(d_loss)
 
@@ -125,15 +132,18 @@ class Trainer:
                 gen_mels = generator(post_mels)
                 g_l1_loss = self.gen_loss(gen_mels, mels, lens)
                 d_fake = discriminator(gen_mels).squeeze()
-                d_loss_fake = self.disc_loss(d_fake, real, lens)
+                d_loss_fake = self.disc_loss(d_fake, real)
                 g_loss = g_l1_loss + d_loss_fake
                 g_loss.backward()
+                #torch.nn.utils.clip_grad_norm_(generator.parameters(), 1.0)
                 gen_opti.step()
                 gen_loss_avg.add(g_loss)
 
                 duration_avg.add(time.time() - t_start)
                 steps_per_s = 1. / duration_avg.get()
-                self.writer.add_scalar('Loss/train', loss, tacotron.get_step())
+                self.writer.add_scalar('Loss/train_tac', loss, tacotron.get_step())
+                self.writer.add_scalar('Loss/train_gen', g_loss, tacotron.get_step())
+                self.writer.add_scalar('Loss/train_disc', d_loss, tacotron.get_step())
                 self.writer.add_scalar('Params/reduction_factor', session.r, tacotron.get_step())
                 self.writer.add_scalar('Params/batch_sze', session.bs, tacotron.get_step())
                 self.writer.add_scalar('Params/learning_rate', session.lr, tacotron.get_step())
@@ -153,12 +163,15 @@ class Trainer:
                     stream(msg + f'| Val Loss: {float(val_loss):#0.4} \n')
                     taco_loss_avg.reset()
                     duration_avg.reset()
+                    gen_loss_avg.reset()
+                    disc_loss_avg.reset()
 
             if tacotron.step > session.max_step:
                 return
 
     def evaluate(self, model, val_set, msg) -> float:
         model.tacotron.eval()
+        model.gan.eval()
         val_loss = 0
         device = next(model.tacotron.parameters()).device
         for i, batch in enumerate(val_set, 1):
@@ -188,11 +201,11 @@ class Trainer:
                          batch: torch.Tensor, pred: torch.Tensor):
         seqs, mels, stops, ids, lens = batch
         lin_mels, post_mels, att = pred
-        mel_sample = mels.transpose(1, 2)[0, :lens[0]].detach().cpu().numpy()
-        gta_sample = post_mels.transpose(1, 2)[0, :lens[0]].detach().cpu().numpy()
+        mel_sample = mels.transpose(1, 2)[0, :600].detach().cpu().numpy()
+        gta_sample = post_mels.transpose(1, 2)[0, :600].detach().cpu().numpy()
 
         gan_mels = model.gan.generator(post_mels)
-        gan_sample = gan_mels.transpose(1, 2)[0, :lens[0]].detach().cpu().numpy()
+        gan_sample = gan_mels.transpose(1, 2)[0, :600].detach().cpu().numpy()
 
         att_sample = att[0].detach().cpu().numpy()
         target_fig = plot_mel(mel_sample)
@@ -206,11 +219,15 @@ class Trainer:
 
         target_wav = self.audio.griffinlim(mel_sample, 32)
         gta_wav = self.audio.griffinlim(gta_sample, 32)
+        gan_wav = self.audio.griffinlim(gan_sample, 32)
         self.writer.add_audio(
             tag='Wav/target', snd_tensor=target_wav,
             global_step=model.tacotron.step, sample_rate=self.audio.sample_rate)
         self.writer.add_audio(
             tag='Wav/ground_truth_aligned', snd_tensor=gta_wav,
+            global_step=model.tacotron.step, sample_rate=self.audio.sample_rate)
+        self.writer.add_audio(
+            tag='Wav/ground_truth_aligned_gan', snd_tensor=gan_wav,
             global_step=model.tacotron.step, sample_rate=self.audio.sample_rate)
 
         seq = seqs[0].tolist()

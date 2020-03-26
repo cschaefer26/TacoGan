@@ -8,7 +8,7 @@ from matplotlib.figure import Figure
 def plot_mel(mel: np.array) -> Figure:
     mel = np.flip(mel, axis=0)
     fig = plt.figure(figsize=(12, 6), dpi=150)
-    plt.imshow(mel, interpolation='nearest', cmap='plasma', aspect='auto')
+    plt.imshow(mel, interpolation='nearest', aspect='auto')
     return fig
 
 

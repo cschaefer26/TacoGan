@@ -38,14 +38,14 @@ class Generator(nn.Module):
             BatchNormConv(conv_dim, conv_dim, 5, activation=torch.tanh, dropout=dropout),
             BatchNormConv(conv_dim, conv_dim, 5, activation=torch.tanh, dropout=dropout)
         ])
-        self.gru = GRU(conv_dim, rnn_dim, bidirectional=True, batch_first=True)
+        self.gru = GRU(n_mels, rnn_dim, bidirectional=True, batch_first=True)
         self.linear = nn.Linear(2 * rnn_dim, n_mels)
 
     def forward(self, x):
-        x = x.transpose(1, 2)
-        for conv in self.convs:
-            x = conv(x)
-        x = x.transpose(1, 2)
+        #x = x.transpose(1, 2)
+        #for conv in self.convs:
+        #    x = conv(x)
+        #x = x.transpose(1, 2)
         x, _ = self.gru(x)
         x = self.linear(x)
         return x
@@ -60,17 +60,18 @@ class Discriminator(nn.Module):
             BatchNormConv(conv_dim, conv_dim, 5, activation=torch.tanh, dropout=dropout),
             BatchNormConv(conv_dim, conv_dim, 5, activation=torch.tanh, dropout=dropout)
         ])
-        self.gru = GRU(conv_dim, rnn_dim, bidirectional=True, batch_first=True)
+        self.gru = GRU(n_mels, rnn_dim, bidirectional=True, batch_first=True)
         self.linear = nn.Linear(2 * rnn_dim, 1)
 
     def forward(self, x):
-        x = x.transpose(1, 2)
-        for conv in self.convs:
-            x = conv(x)
-        x = x.transpose(1, 2)
+        #x = x.transpose(1, 2)
+        #for conv in self.convs:
+        #    x = conv(x)
+        #x = x.transpose(1, 2)
         x, _ = self.gru(x)
         x = self.linear(x)
-        return torch.sigmoid(x)
+        x = torch.sigmoid(x)
+        return x
 
 
 class GAN(nn.Module):

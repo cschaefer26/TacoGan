@@ -24,22 +24,22 @@ max_mel_len: 1200
 
 # TRAINING (overrides loaded model config)
 training_schedule:
-  - [10, 1e-3, 5_000, 4]
+  - [10, 1e-3, 5_000, 8]
   - [5,  1e-4, 10_000, 8]
   - [2,  1e-4, 30_000, 8]
 log_dir: /tmp/tacogan
-steps_to_eval: 10
+steps_to_eval: 100
 steps_to_checkpoint: 1_000
 silence_len: 50 # extra mel steps with silence as stopping criterion
 
 
 # MODEL
-embed_dims: 16
+embed_dims: 128
 encoder_dims: 128
 decoder_dims: 256
 postnet_dims: 128
 encoder_K: 2
-lstm_dims: 16
+lstm_dims: 128
 postnet_K: 2
 num_highways: 4
 dropout: 0.5
@@ -47,6 +47,6 @@ stop_threshold: -3.4
 
 
 # GAN PARAMS
-gan_conv_dim: 256
-gan_rnn_dim: 256
+gan_conv_dim: 128
+gan_rnn_dim: 128
 gan_dropout: 0.5
