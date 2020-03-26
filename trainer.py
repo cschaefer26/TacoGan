@@ -213,17 +213,12 @@ class Trainer:
         mel_sample = mels.transpose(1, 2)[0, :600].detach().cpu().numpy()
         gta_sample = post_mels.transpose(1, 2)[0, :600].detach().cpu().numpy()
 
-        gan_mels = model.gan.generator(post_mels)
-        gan_sample = gan_mels.transpose(1, 2)[0, :600].detach().cpu().numpy()
-
         att_sample = att[0].detach().cpu().numpy()
         target_fig = plot_mel(mel_sample)
         gta_fig = plot_mel(gta_sample)
-        gan_fig = plot_mel(gan_sample)
         att_fig = plot_attention(att_sample)
         self.writer.add_figure('Mel/target', target_fig, model.tacotron.step)
         self.writer.add_figure('Mel/ground_truth_aligned', gta_fig, model.tacotron.step)
-        self.writer.add_figure('Mel/ground_truth_aligned_gan', gan_fig, model.tacotron.step)
         self.writer.add_figure('Attention/ground_truth_aligned', att_fig, model.tacotron.step)
 
         target_wav = self.audio.griffinlim(mel_sample, 32)
