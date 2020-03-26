@@ -139,6 +139,7 @@ class Trainer:
                 #torch.nn.utils.clip_grad_norm_(generator.parameters(), 1.0)
                 gen_opti.step()
                 gen_loss_avg.add(g_loss)
+                gen_loss_l1_avg.add(g_loss)
 
                 duration_avg.add(time.time() - t_start)
                 steps_per_s = 1. / duration_avg.get()
