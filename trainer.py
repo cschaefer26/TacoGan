@@ -91,8 +91,8 @@ class Trainer:
             for i, (seqs, mels, stops, ids, lens) in enumerate(session.train_set):
                 seqs, mels, stops, lens = \
                     seqs.to(device), mels.to(device), stops.to(device), lens.to(device)
-                fake = torch.zeros((mels.size(0), mels.size(1))).to(device)
-                real = torch.ones((mels.size(0), mels.size(1))).to(device)
+                fake = torch.zeros((mels.size(0), mels.size(1), 1)).to(device)
+                real = torch.ones((mels.size(0), mels.size(1), 1)).to(device)
                 t_start = time.time()
 
                 # train tacotron
@@ -116,7 +116,7 @@ class Trainer:
                 disc_opti.zero_grad()
                 with torch.no_grad():
                     gen_mels = generator(post_mels)
-                d_fake = discriminator(gen_mels).squeeze()
+                d_fake = discriminator(gen_mels)
                 d_real = discriminator(mels).squeeze()
                 d_loss_fake = self.disc_loss(d_fake, fake)
                 d_loss_real = self.disc_loss(d_real, real)
