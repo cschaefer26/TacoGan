@@ -223,7 +223,6 @@ class Trainer:
 
         target_wav = self.audio.griffinlim(mel_sample, 32)
         gta_wav = self.audio.griffinlim(gta_sample, 32)
-        gan_wav = self.audio.griffinlim(gan_sample, 32)
         self.writer.add_audio(
             tag='Wav/target', snd_tensor=target_wav,
             global_step=model.tacotron.step, sample_rate=self.audio.sample_rate)

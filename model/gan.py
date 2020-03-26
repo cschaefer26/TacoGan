@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Union
 
 from torch.nn.modules.dropout import Dropout
-from torch.nn.modules.rnn import GRU
+from torch.nn.modules.rnn import GRU, LSTM
 
 from utils.config import Config
 
@@ -61,7 +61,7 @@ class Discriminator(nn.Module):
             BatchNormConv(conv_dim, conv_dim, 5, activation=torch.tanh, dropout=dropout),
             BatchNormConv(conv_dim, conv_dim, 5, activation=torch.tanh, dropout=dropout)
         ])
-        self.gru = GRU(n_mels, rnn_dim, bidirectional=True, batch_first=True)
+        self.lstm = LSTM(n_mels, rnn_dim, bidirectional=True, batch_first=True)
         self.linear = nn.Linear(2 * rnn_dim, 1)
 
     def forward(self, x):
@@ -69,10 +69,11 @@ class Discriminator(nn.Module):
         #for conv in self.convs:
         #    x = conv(x)
         #x = x.transpose(1, 2)
-        x, _ = self.gru(x)
+        x, _ = self.lstm(x)
         x = self.linear(x)
         x = torch.sigmoid(x)
         return x
+
 
 
 class GAN(nn.Module):
@@ -96,6 +97,11 @@ class GAN(nn.Module):
 
     def save(self, path: Union[str, Path]):
         torch.save(self.state_dict(), path)
+
+    def init_model(self):
+        for p in self.parameters():
+            if p.dim() > 1:
+                nn.init.xavier_uniform_(p)
 
     @classmethod
     def from_config(cls, cfg: Config) -> 'GAN':
