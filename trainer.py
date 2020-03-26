@@ -117,7 +117,7 @@ class Trainer:
                 with torch.no_grad():
                     gen_mels = generator(post_mels)
                 d_fake = discriminator(gen_mels)
-                d_real = discriminator(mels).squeeze()
+                d_real = discriminator(mels)
                 d_loss_fake = self.disc_loss(d_fake, fake)
                 d_loss_real = self.disc_loss(d_real, real)
                 d_loss = d_loss_fake + d_loss_real
