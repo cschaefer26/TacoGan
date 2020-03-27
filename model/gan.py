@@ -64,14 +64,15 @@ class Discriminator(nn.Module):
         self.lstm = LSTM(n_mels, rnn_dim, bidirectional=True, batch_first=True)
         self.linear = nn.Linear(2 * rnn_dim, 1)
 
-    def forward(self, x):
+    def forward(self, x, x_target):
         #x = x.transpose(1, 2)
         #for conv in self.convs:
         #    x = conv(x)
         #x = x.transpose(1, 2)
-        x, _ = self.lstm(x)
-        x = self.linear(x)
-        x = torch.sigmoid(x)
+        dx = x - x_target
+        x, _ = self.lstm(dx)
+        x = self.linear(dx)
+        #x = torch.sigmoid(x)
         return x
 
 

@@ -30,7 +30,7 @@ class MaskedL1(torch.nn.Module):
 
 class MaskedBCE(torch.nn.Module):
 
-    def __init__(self, pos_weight=10):
+    def __init__(self, pos_weight=1):
         super().__init__()
         self.register_buffer('pos_weight', torch.tensor(pos_weight))
 
