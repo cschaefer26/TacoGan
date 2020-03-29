@@ -48,7 +48,7 @@ class Trainer:
         self.writer = SummaryWriter(log_dir=log_dir, comment='v1')
         self.taco_loss = MaskedL1()
         self.gen_loss = MaskedL1()
-        self.disc_loss = MaskedBCE()
+        self.disc_loss = BCELoss()
 
     def train(self, model: ModelPackage):
         for i, session_params in enumerate(self.cfg.training_schedule, 1):
@@ -95,8 +95,8 @@ class Trainer:
             for i, (seqs, mels, stops, ids, lens) in enumerate(session.train_set):
                 seqs, mels, stops, lens = \
                     seqs.to(device), mels.to(device), stops.to(device), lens.to(device)
-                fake = torch.zeros((mels.size(0), mels.size(1))).to(device)
-                real = torch.ones((mels.size(0), mels.size(1))).to(device)
+                fake = torch.zeros((mels.size(0), mels.size(1), 1)).to(device)
+                real = torch.ones((mels.size(0), mels.size(1), 1)).to(device)
                 t_start = time.time()
 
                 # train tacotron
@@ -120,10 +120,10 @@ class Trainer:
                 gan.zero_grad()
                 disc_opti.zero_grad()
                 gan_mels = generator(post_mels)
-                d_fake = discriminator(gan_mels).squeeze()
-                d_real = discriminator(mels).squeeze()
-                d_loss_fake = self.disc_loss(d_fake, fake, lens)
-                d_loss_real = self.disc_loss(d_real, real, lens)
+                d_fake = discriminator(gan_mels)
+                d_real = discriminator(mels)
+                d_loss_fake = self.disc_loss(d_fake, fake)
+                d_loss_real = self.disc_loss(d_real, real)
                 d_loss = d_loss_fake + d_loss_real
                 d_loss.backward()
                 torch.nn.utils.clip_grad_norm_(discriminator.parameters(), 1.0)
@@ -136,8 +136,8 @@ class Trainer:
                 gen_opti.zero_grad()
                 gan_mels = generator(post_mels)
                 g_l1_loss = self.gen_loss(gan_mels, mels, lens)
-                d_fake = discriminator(gan_mels).squeeze()
-                d_loss_fake_real = self.disc_loss(d_fake, real, lens)
+                d_fake = discriminator(gan_mels)
+                d_loss_fake_real = self.disc_loss(d_fake, real)
                 g_loss = g_l1_loss + cfg.gan_weight * d_loss_fake_real
                 g_loss.backward()
                 torch.nn.utils.clip_grad_norm_(generator.parameters(), 1.0)
