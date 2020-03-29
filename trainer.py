@@ -119,7 +119,8 @@ class Trainer:
                 post_mels = post_mels.detach()
                 gan.zero_grad()
                 disc_opti.zero_grad()
-                gan_mels = generator(post_mels)
+                with torch.no_grad():
+                    gan_mels = generator(post_mels)
                 d_fake = discriminator(gan_mels)
                 d_real = discriminator(mels)
                 d_loss_fake = self.disc_loss(d_fake, fake)
