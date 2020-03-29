@@ -70,7 +70,7 @@ class Discriminator(nn.Module):
         #x = x.transpose(1, 2)
         x, _ = self.lstm(x)
         x = self.linear(x)
-        x = torch.sigmoid(x)
+        #x = torch.sigmoid(x)
         return x
 
 
