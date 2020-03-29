@@ -120,8 +120,8 @@ class Trainer:
                 gan.zero_grad()
                 disc_opti.zero_grad()
                 gan_mels = generator(post_mels)
-                d_fake = discriminator(gan_mels, mels).squeeze()
-                d_real = discriminator(mels, mels).squeeze()
+                d_fake = discriminator(gan_mels).squeeze()
+                d_real = discriminator(mels).squeeze()
                 d_loss_fake = self.disc_loss(d_fake, fake, lens)
                 d_loss_real = self.disc_loss(d_real, real, lens)
                 d_loss = d_loss_fake + d_loss_real
@@ -136,9 +136,9 @@ class Trainer:
                 gen_opti.zero_grad()
                 gan_mels = generator(post_mels)
                 g_l1_loss = self.gen_loss(gan_mels, mels, lens)
-                d_fake = discriminator(gan_mels)
-                d_loss_fake_real = self.disc_loss(d_fake, real)
-                g_loss = g_l1_loss + d_loss_fake_real
+                d_fake = discriminator(gan_mels).squeeze()
+                d_loss_fake_real = self.disc_loss(d_fake, real, lens)
+                g_loss = g_l1_loss + cfg.gan_weight * d_loss_fake_real
                 g_loss.backward()
                 torch.nn.utils.clip_grad_norm_(generator.parameters(), 1.0)
                 gen_opti.step()
@@ -149,7 +149,7 @@ class Trainer:
                 steps_per_s = 1. / duration_avg.get()
                 self.writer.add_scalar('Loss/train_taco', loss, tacotron.get_step())
                 self.writer.add_scalar('Loss/train_post', post_loss, tacotron.get_step())
-                self.writer.add_scalar('Loss/train_generator_l1', d_loss_fake_real, tacotron.get_step())
+                self.writer.add_scalar('Loss/train_generator_l1', g_l1_loss, tacotron.get_step())
                 self.writer.add_scalar('Loss/train_generator_gan', d_loss_fake_real, tacotron.get_step())
                 self.writer.add_scalar('Loss/train_disc_real', d_loss_real, tacotron.get_step())
                 self.writer.add_scalar('Loss/train_disc_fake', d_loss_fake, tacotron.get_step())

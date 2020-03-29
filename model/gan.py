@@ -38,7 +38,7 @@ class Generator(nn.Module):
             BatchNormConv(conv_dim, conv_dim, 5, activation=torch.tanh, dropout=dropout),
             BatchNormConv(conv_dim, conv_dim, 5, activation=torch.tanh, dropout=dropout)
         ])
-        self.gru = GRU(n_mels, rnn_dim, bidirectional=True, batch_first=True)
+        self.lstm = LSTM(n_mels, rnn_dim, bidirectional=True, batch_first=True)
         self.linear = nn.Linear(2 * rnn_dim, n_mels)
 
     def forward(self, x):
@@ -46,9 +46,8 @@ class Generator(nn.Module):
         #for conv in self.convs:
         #    x = conv(x)
         #x = x.transpose(1, 2)
-        x_gru, _ = self.gru(x)
-        x_gru = self.linear(x_gru)
-        x = x + x_gru
+        x, _ = self.lstm(x)
+        x = self.linear(x)
         return x
 
 
@@ -64,14 +63,13 @@ class Discriminator(nn.Module):
         self.lstm = LSTM(n_mels, rnn_dim, bidirectional=True, batch_first=True)
         self.linear = nn.Linear(2 * rnn_dim, 1)
 
-    def forward(self, x, x_target):
+    def forward(self, x):
         #x = x.transpose(1, 2)
         #for conv in self.convs:
         #    x = conv(x)
         #x = x.transpose(1, 2)
-        dx = x - x_target
-        x, _ = self.lstm(dx)
-        x = self.linear(dx)
+        x, _ = self.lstm(x)
+        x = self.linear(x)
         #x = torch.sigmoid(x)
         return x
 
