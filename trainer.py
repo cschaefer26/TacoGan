@@ -142,7 +142,7 @@ class Trainer:
                 g_loss.backward()
                 torch.nn.utils.clip_grad_norm_(generator.parameters(), 1.0)
                 gen_opti.step()
-                gen_loss_avg.add(g_loss)
+                gen_loss_avg.add(d_loss_fake_real)
                 gen_loss_l1_avg.add(g_l1_loss)
 
                 duration_avg.add(time.time() - t_start)
@@ -160,7 +160,7 @@ class Trainer:
                 msg = f'Step: {tacotron.get_step()} ' \
                       f'| {steps_per_s:#.2} steps/s | Taco Loss: {taco_loss_avg.get():#.4} ' \
                       f'| Post Loss: {post_loss_avg.get():#.4}  Gen L1 Loss: {gen_loss_l1_avg.get():#.4} ' \
-                      f'| Gen Loss: {gen_loss_avg.get()} | Disc Loss Fake: {disc_loss_fake_avg.get():#.4} ' \
+                      f'| Gen GAN Loss: {gen_loss_avg.get()} | Disc Loss Fake: {disc_loss_fake_avg.get():#.4} ' \
                       f'Disc Loss Real: {disc_loss_real_avg.get():#.4} '
                 stream(msg)
 
@@ -175,6 +175,7 @@ class Trainer:
                     taco_loss_avg.reset()
                     duration_avg.reset()
                     gen_loss_avg.reset()
+                    gen_loss_l1_avg.reset()
                     disc_loss_fake_avg.reset()
                     disc_loss_real_avg.reset()
                     taco_loss_avg.reset()
