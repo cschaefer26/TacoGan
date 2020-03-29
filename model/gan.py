@@ -61,8 +61,8 @@ class Discriminator(nn.Module):
             BatchNormConv(conv_dim, conv_dim, 5, activation=torch.tanh, dropout=dropout),
             BatchNormConv(conv_dim, conv_dim, 5, activation=torch.tanh, dropout=dropout)
         ])
-        self.lstm = LSTM(n_mels, rnn_dim, bidirectional=True, batch_first=True)
-        self.linear = nn.Linear(2 * rnn_dim, 1)
+        self.lstm = LSTM(n_mels, rnn_dim, bidirectional=True, batch_first=True, bias=False)
+        self.linear = nn.Linear(2 * rnn_dim, 1, bias=False)
 
     def forward(self, x):
         #x = x.transpose(1, 2)
