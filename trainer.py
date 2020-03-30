@@ -219,8 +219,8 @@ class Trainer:
                          batch: torch.Tensor, pred: torch.Tensor):
         seqs, mels, stops, ids, lens = batch
         lin_mels, post_mels, att = pred
-        mel_sample = mels[0, :600].transpose(1, 2).detach().cpu().numpy()
-        gta_sample = post_mels[0, :600].transpose(1, 2).detach().cpu().numpy()
+        mel_sample = mels.transpose(1, 2)[0, :, :600].detach().cpu().numpy()
+        gta_sample = post_mels.transpose(1, 2)[0, :, 600].detach().cpu().numpy()
         #gan_sample = model.gan.generator(post_mels).transpose(1, 2)[0, :600].detach().cpu().numpy()
 
         att_sample = att[0].detach().cpu().numpy()
@@ -247,7 +247,7 @@ class Trainer:
         device = next(model.tacotron.parameters()).device
         seqs = seqs.to(device)
         _, gen_sample_in, att_sample = model.tacotron.generate(seqs, batch=True)
-        gan_sample = model.gan.generator(gen_sample_in)[0, :600].transpose(1, 2).detach().cpu().numpy()
+        gan_sample = model.gan.generator(gen_sample_in).transpose(1, 2)[0, :, :600].detach().cpu().numpy()
         gen_fig = plot_mel(gen_sample)
         gan_fig = plot_mel(gan_sample)
         att_fig = plot_attention(att_sample)
