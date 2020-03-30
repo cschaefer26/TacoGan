@@ -242,7 +242,7 @@ class Trainer:
 
         seq = seqs[0].tolist()
         _, gen_sample, att_sample = model.tacotron.generate(seq, steps=lens[0])
-        gan_in = torch.tensor(gen_sample)
+        gan_in = torch.tensor(gen_sample).unsqueeze(0)
         gan_sample = model.gan.generator(gan_in)
         gen_fig = plot_mel(gen_sample)
         gan_fig = plot_mel(gan_sample)
