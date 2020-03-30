@@ -243,7 +243,7 @@ class Trainer:
             global_step=model.tacotron.step, sample_rate=self.audio.sample_rate)
 
         seq = seqs[0].tolist()
-        _, gen_sample, att_sample = model.tacotron.generate(seq, steps=lens[0])
+        _, gen_sample, att_sample = model.tacotron.generate(seq, steps=lens[0])[:, :600]
         device = next(model.tacotron.parameters()).device
         seqs = seqs.to(device)
         _, gen_sample_in, att_sample = model.tacotron.generate(seqs, batch=True)
