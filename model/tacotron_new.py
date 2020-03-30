@@ -291,7 +291,7 @@ class Tacotron(nn.Module):
                                encoder_K, num_highways, dropout)
         self.encoder_proj = nn.Linear(decoder_dims, decoder_dims, bias=False)
         self.decoder = Decoder(n_mels, decoder_dims, lstm_dims)
-        self.postnet = CBHG(postnet_K, n_mels, postnet_dims, [256, 80], num_highways)
+        self.postnet = CBHG(postnet_K, n_mels, postnet_dims, [256, n_mels], num_highways)
         self.post_proj = nn.Linear(postnet_dims * 2, fft_bins, bias=False)
 
         self.init_model()
