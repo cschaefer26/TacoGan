@@ -220,7 +220,7 @@ class Trainer:
         seqs, mels, stops, ids, lens = batch
         lin_mels, post_mels, att = pred
         mel_sample = mels.transpose(1, 2)[0, :, :600].detach().cpu().numpy()
-        gta_sample = post_mels.transpose(1, 2)[0, :, 600].detach().cpu().numpy()
+        gta_sample = post_mels.transpose(1, 2)[0, :, :600].detach().cpu().numpy()
         #gan_sample = model.gan.generator(post_mels).transpose(1, 2)[0, :600].detach().cpu().numpy()
 
         att_sample = att[0].detach().cpu().numpy()
