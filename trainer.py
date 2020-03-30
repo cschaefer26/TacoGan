@@ -11,7 +11,6 @@ from audio import Audio
 from dataset import new_audio_datasets
 from losses import MaskedL1, MaskedBCE
 from model.io import ModelPackage
-from train_tacogan import get_device
 from utils.common import Averager
 from utils.config import Config
 from utils.decorators import ignore_exception
