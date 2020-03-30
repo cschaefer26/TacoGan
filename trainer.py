@@ -244,7 +244,7 @@ class Trainer:
         seq = seqs[0].tolist()
         _, gen_sample, att_sample = model.tacotron.generate(seq, steps=lens[0])
         _, gen_sample_in, att_sample = model.tacotron.generate(seq, steps=lens[0], batch=True)
-        gan_sample = model.gan.generator(gen_sample_in)
+        gan_sample = model.gan.generator(gen_sample_in).transpose(1, 2)[0, :600].detach().cpu().numpy()
         gen_fig = plot_mel(gen_sample)
         gan_fig = plot_mel(gan_sample)
         att_fig = plot_attention(att_sample)
