@@ -11,6 +11,7 @@ from audio import Audio
 from dataset import new_audio_datasets
 from losses import MaskedL1, MaskedBCE
 from model.io import ModelPackage
+from train_tacogan import get_device
 from utils.common import Averager
 from utils.config import Config
 from utils.decorators import ignore_exception
@@ -216,6 +217,7 @@ class Trainer:
     def generate_samples(self, model: ModelPackage,
                          batch: torch.Tensor, pred: torch.Tensor):
         seqs, mels, stops, ids, lens = batch
+        device = next(model.tacotron.parameters()).device
         lin_mels, post_mels, att = pred
         mel_sample = mels.transpose(1, 2)[0, :600].detach().cpu().numpy()
         gta_sample = post_mels.transpose(1, 2)[0, :600].detach().cpu().numpy()
@@ -242,7 +244,7 @@ class Trainer:
 
         seq = seqs[0].tolist()
         _, gen_sample, att_sample = model.tacotron.generate(seq, steps=lens[0])
-        gan_in = torch.tensor(gen_sample).unsqueeze(0)
+        gan_in = torch.tensor(gen_sample).unsqueeze(0).to(device)
         gan_sample = model.gan.generator(gan_in)
         gen_fig = plot_mel(gen_sample)
         gan_fig = plot_mel(gan_sample)
