@@ -138,7 +138,7 @@ class Trainer:
                 gan.zero_grad()
                 gen_opti.zero_grad()
                 gan_mels = generator(post_mels)
-                g_l1_loss = self.gen_loss(gan_mels, mels, lens)
+                g_l1_loss = self.gen_loss(gan_mels, post_mels, lens)
                 d_fake = discriminator(gan_mels).squeeze()
                 d_loss_fake_real = self.disc_loss(d_fake, real, lens)
                 g_loss = g_l1_loss + cfg.gan_weight * d_loss_fake_real
