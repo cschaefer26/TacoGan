@@ -371,10 +371,10 @@ class Tacotron(nn.Module):
         device = next(self.parameters()).device  # use same device as parameters
 
         if not batch:
-            batch_size = x.size(0)
+            batch_size = 1
             x = torch.as_tensor(x, dtype=torch.long, device=device).unsqueeze(0)
         else:
-            batch_size = 1
+            batch_size = x.size(0)
         # Need to initialise all hidden states and pack into tuple for tidyness
         attn_hidden = torch.zeros(batch_size, self.decoder_dims, device=device)
         rnn1_hidden = torch.zeros(batch_size, self.lstm_dims, device=device)
