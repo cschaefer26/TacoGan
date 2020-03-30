@@ -252,6 +252,10 @@ class Trainer:
         self.writer.add_figure('Mel/generated', gen_fig, model.tacotron.step)
         self.writer.add_figure('Mel/generated_gan', gan_fig, model.tacotron.step)
         gen_wav = self.audio.griffinlim(gen_sample, 32)
+        gan_wav = self.audio.griffinlim(gan_sample, 32)
         self.writer.add_audio(
             tag='Wav/generated', snd_tensor=gen_wav,
+            global_step=model.tacotron.step, sample_rate=self.audio.sample_rate)
+        self.writer.add_audio(
+            tag='Wav/generated_gan', snd_tensor=gan_wav,
             global_step=model.tacotron.step, sample_rate=self.audio.sample_rate)
