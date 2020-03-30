@@ -370,8 +370,9 @@ class Tacotron(nn.Module):
         self.eval()
         device = next(self.parameters()).device  # use same device as parameters
 
-        batch_size = 1
-        x = torch.as_tensor(x, dtype=torch.long, device=device).unsqueeze(0)
+        batch_size = x.size(0)
+        if not batch:
+            x = torch.as_tensor(x, dtype=torch.long, device=device).unsqueeze(0)
 
         # Need to initialise all hidden states and pack into tuple for tidyness
         attn_hidden = torch.zeros(batch_size, self.decoder_dims, device=device)
@@ -407,7 +408,8 @@ class Tacotron(nn.Module):
             mel_outputs.append(mel_frames)
             attn_scores.append(scores)
             # Stop the loop if silent frames present
-            if (mel_frames < -0.9).all() and t > 10: break
+            if not batch and (mel_frames < -0.9).all() and t > 10:
+                break
 
         # Concat the mel outputs into sequence
         mel_outputs = torch.cat(mel_outputs, dim=2)

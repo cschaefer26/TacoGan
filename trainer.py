@@ -116,7 +116,9 @@ class Trainer:
                 post_loss_avg.add(post_loss)
 
                 # train discriminator
-                post_mels = post_mels.detach()
+                with torch.no_grad():
+                    _, post_mels, _ = model.tacotron.generate(seqs, steps=mels.size(1), batch=True)
+                #post_mels = post_mels.detach()
                 gan.zero_grad()
                 disc_opti.zero_grad()
                 with torch.no_grad():
@@ -216,20 +218,19 @@ class Trainer:
     def generate_samples(self, model: ModelPackage,
                          batch: torch.Tensor, pred: torch.Tensor):
         seqs, mels, stops, ids, lens = batch
-        device = next(model.tacotron.parameters()).device
         lin_mels, post_mels, att = pred
         mel_sample = mels.transpose(1, 2)[0, :600].detach().cpu().numpy()
         gta_sample = post_mels.transpose(1, 2)[0, :600].detach().cpu().numpy()
-        gan_sample = model.gan.generator(post_mels).transpose(1, 2)[0, :600].detach().cpu().numpy()
+        #gan_sample = model.gan.generator(post_mels).transpose(1, 2)[0, :600].detach().cpu().numpy()
 
         att_sample = att[0].detach().cpu().numpy()
         target_fig = plot_mel(mel_sample)
         gta_fig = plot_mel(gta_sample)
-        gan_fig = plot_mel(gan_sample)
+        #gan_fig = plot_mel(gan_sample)
         att_fig = plot_attention(att_sample)
         self.writer.add_figure('Mel/target', target_fig, model.tacotron.step)
         self.writer.add_figure('Mel/ground_truth_aligned', gta_fig, model.tacotron.step)
-        self.writer.add_figure('Mel/ground_truth_aligned_gan', gan_fig, model.tacotron.step)
+        #self.writer.add_figure('Mel/ground_truth_aligned_gan', gan_fig, model.tacotron.step)
         self.writer.add_figure('Attention/ground_truth_aligned', att_fig, model.tacotron.step)
 
         target_wav = self.audio.griffinlim(mel_sample, 32)
@@ -243,7 +244,7 @@ class Trainer:
 
         seq = seqs[0].tolist()
         _, gen_sample, att_sample = model.tacotron.generate(seq, steps=lens[0])
-        _, gen_sample_in, att_sample = model.tacotron.generate(seq, steps=lens[0], batch=True)
+        _, gen_sample_in, att_sample = model.tacotron.generate(seqs, batch=True)
         gan_sample = model.gan.generator(gen_sample_in).transpose(1, 2)[0, :600].detach().cpu().numpy()
         gen_fig = plot_mel(gen_sample)
         gan_fig = plot_mel(gan_sample)
