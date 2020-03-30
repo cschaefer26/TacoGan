@@ -234,11 +234,15 @@ class Trainer:
 
         target_wav = self.audio.griffinlim(mel_sample, 32)
         gta_wav = self.audio.griffinlim(gta_sample, 32)
+        gan_wav = self.audio.griffinlim(gan_sample, 32)
         self.writer.add_audio(
             tag='Wav/target', snd_tensor=target_wav,
             global_step=model.tacotron.step, sample_rate=self.audio.sample_rate)
         self.writer.add_audio(
             tag='Wav/ground_truth_aligned', snd_tensor=gta_wav,
+            global_step=model.tacotron.step, sample_rate=self.audio.sample_rate)
+        self.writer.add_audio(
+            tag='Wav/ground_truth_aligned_gan', snd_tensor=gan_wav,
             global_step=model.tacotron.step, sample_rate=self.audio.sample_rate)
 
         seq = seqs[0].tolist()
