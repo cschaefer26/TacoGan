@@ -366,7 +366,7 @@ class Tacotron(nn.Module):
         linear = linear.transpose(1, 2)
         return mel_outputs, linear, attn_scores
 
-    def generate(self, x, steps=2000):
+    def generate(self, x, steps=2000, batch=False):
         self.eval()
         device = next(self.parameters()).device  # use same device as parameters
 
@@ -415,9 +415,9 @@ class Tacotron(nn.Module):
         # Post-Process for Linear Spectrograms
         postnet_out = self.postnet(mel_outputs)
         linear = self.post_proj(postnet_out)
-
-        linear = linear.transpose(1, 2)[0].cpu().data.numpy()
-        mel_outputs = mel_outputs[0].cpu().data.numpy()
+        if not batch:
+            linear = linear.transpose(1, 2)[0].cpu().data.numpy()
+            mel_outputs = mel_outputs[0].cpu().data.numpy()
 
         # For easy visualisation
         attn_scores = torch.cat(attn_scores, 1)

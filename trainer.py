@@ -243,8 +243,8 @@ class Trainer:
 
         seq = seqs[0].tolist()
         _, gen_sample, att_sample = model.tacotron.generate(seq, steps=lens[0])
-        gan_in = torch.tensor(gen_sample).unsqueeze(0).transpose(1, 2).to(device)
-        gan_sample = model.gan.generator(gan_in)
+        _, gen_sample_in, att_sample = model.tacotron.generate(seq, steps=lens[0], batch=True)
+        gan_sample = model.gan.generator(gen_sample_in)
         gen_fig = plot_mel(gen_sample)
         gan_fig = plot_mel(gan_sample)
         att_fig = plot_attention(att_sample)
