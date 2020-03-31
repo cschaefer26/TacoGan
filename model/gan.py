@@ -34,12 +34,20 @@ class Generator(nn.Module):
 
     def __init__(self, n_mels, conv_dim, rnn_dim, dropout=0.5):
         super().__init__()
-        self.cbhg = CBHG(8, n_mels, 256, [256, n_mels], 4)
+        self.convs = nn.ModuleList([
+            BatchNormConv(n_mels, conv_dim, 5, activation=torch.tanh, dropout=dropout),
+            BatchNormConv(conv_dim, conv_dim, 5, activation=torch.tanh, dropout=dropout),
+            BatchNormConv(conv_dim, conv_dim, 5, activation=torch.tanh, dropout=dropout)
+        ])
+        self.lstm = LSTM(n_mels, rnn_dim, bidirectional=True, batch_first=True)
         self.linear = nn.Linear(2 * rnn_dim, n_mels)
 
     def forward(self, x):
-        x = x.transpose(1, 2)
-        x = self.cbhg(x)
+        #x = x.transpose(1, 2)
+        #for conv in self.convs:
+        #    x = conv(x)
+        #x = x.transpose(1, 2)
+        x, _ = self.lstm(x)
         x = self.linear(x)
         return x
 
@@ -48,12 +56,20 @@ class Discriminator(nn.Module):
 
     def __init__(self, n_mels, conv_dim, rnn_dim, dropout=0.5):
         super().__init__()
-        self.cbhg = CBHG(8, n_mels, 256, [256, n_mels], 4)
+        self.convs = nn.ModuleList([
+            BatchNormConv(n_mels, conv_dim, 5, activation=torch.tanh, dropout=dropout),
+            BatchNormConv(conv_dim, conv_dim, 5, activation=torch.tanh, dropout=dropout),
+            BatchNormConv(conv_dim, conv_dim, 5, activation=torch.tanh, dropout=dropout)
+        ])
+        self.lstm = LSTM(n_mels, rnn_dim, bidirectional=True, batch_first=True)
         self.linear = nn.Linear(2 * rnn_dim, 1)
 
     def forward(self, x):
-        x = x.transpose(1, 2)
-        x = self.cbhg(x)
+        #x = x.transpose(1, 2)
+        #for conv in self.convs:
+        #    x = conv(x)
+        #x = x.transpose(1, 2)
+        x, _ = self.lstm(x)
         x = self.linear(x)
         return x
 
