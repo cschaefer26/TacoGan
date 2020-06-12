@@ -1,9 +1,12 @@
+import random
 from typing import List, Dict
 import torch
 import numpy as np
 from pathlib import Path
 
 from torch.utils.data import Dataset, DataLoader
+from torch.utils.data.sampler import Sampler
+
 from text.text_cleaner import english_cleaners, german_cleaners, get_cleaners
 from text.tokenizer import Tokenizer
 from utils.io import unpickle_binary
@@ -49,7 +52,7 @@ def new_audio_datasets(paths: Paths, batch_size, r, cfg):
     cleaners = get_cleaners(cfg.cleaners)
 
     tokenizer = Tokenizer(cleaners, cfg.symbols)
-
+    train_sampler = BinnedLengthSampler(train_lens, batch_size, batch_size * 3)
     train_dataset = AudioDataset(mel_path=paths.mel,
                                  mel_ids=train_ids,
                                  text_dict=text_dict,
@@ -63,8 +66,7 @@ def new_audio_datasets(paths: Paths, batch_size, r, cfg):
     train_set = DataLoader(train_dataset,
                            collate_fn=lambda batch: collate_fn(batch, r),
                            batch_size=batch_size,
-                           sampler=None,
-                           shuffle=True,
+                           sampler=train_sampler,
                            num_workers=1,
                            pin_memory=True)
 
@@ -93,6 +95,37 @@ def collate_fn(batch: tuple, r: int) -> tuple:
     seq_lens = torch.tensor(seq_lens)
     return seqs, mels, seq_lens, mel_lens, ids
 
+
+class BinnedLengthSampler(Sampler):
+    def __init__(self, lengths, batch_size, bin_size):
+        _, self.idx = torch.sort(torch.tensor(lengths).long())
+        self.batch_size = batch_size
+        self.bin_size = bin_size
+        assert self.bin_size % self.batch_size == 0
+
+    def __iter__(self):
+        # Need to change to numpy since there's a bug in random.shuffle(tensor)
+        # TODO: Post an issue on pytorch repo
+        idx = self.idx.numpy()
+        bins = []
+
+        for i in range(len(idx) // self.bin_size):
+            this_bin = idx[i * self.bin_size:(i + 1) * self.bin_size]
+            random.shuffle(this_bin)
+            bins += [this_bin]
+
+        random.shuffle(bins)
+        binned_idx = np.stack(bins).reshape(-1)
+
+        if len(binned_idx) < len(idx):
+            last_bin = idx[len(binned_idx):]
+            random.shuffle(last_bin)
+            binned_idx = np.concatenate([binned_idx, last_bin])
+
+        return iter(torch.tensor(binned_idx).long())
+
+    def __len__(self):
+        return len(self.idx)
 
 def _to_tensor_1d(seqs: List[np.array], max_len: int):
     seqs_padded = []
