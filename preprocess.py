@@ -34,6 +34,7 @@ def read_metafile(path: str):
         for line in f :
             split = line.split('|')
             text_dict[split[0]] = split[1]
+            print(split[1])
     return text_dict
 
 
