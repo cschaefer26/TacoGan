@@ -33,7 +33,7 @@ def read_metafile(path: str):
     with open(csv_files[0], encoding='utf-8') as f :
         for line in f :
             split = line.split('|')
-            text_dict[split[0]] = split[-1]
+            text_dict[split[0]] = split[1]
     return text_dict
 
 

@@ -55,6 +55,8 @@ def get_cleaners(cleaners_str: str) -> Callable[[str], str]:
         return english_cleaners
     elif cleaners_str == 'german_cleaners':
         return german_cleaners
+    elif cleaners_str == 'basic_cleaners':
+        return basic_cleaners
     else:
         raise ValueError(f'cleaners not supported: {cleaners_str}')
 

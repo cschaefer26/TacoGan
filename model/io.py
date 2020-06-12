@@ -4,6 +4,7 @@ from pathlib import Path
 import torch
 from torch.optim.adam import Adam
 
+from model.aligner import Aligner
 from model.gan import GAN
 from model.tacotron_new import Tacotron
 from utils.config import Config
@@ -16,7 +17,7 @@ class ModelPackage:
     """
 
     def __init__(self,
-                 tacotron: Tacotron,
+                 aligner: Aligner,
                  gan: GAN,
                  taco_opti: Adam,
                  gen_opti: Adam,

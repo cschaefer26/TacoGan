@@ -1,4 +1,4 @@
-config_id: ljspeech_2
+config_id: asvoice
 
 # AUDIO
 sample_rate: 22050
@@ -15,7 +15,7 @@ n_workers: 16
 
 # TEXT
 symbols: "!'(),.:;?_- ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜäöüabcdefghijklmnopqrstuvwxyz"
-cleaners: 'english_cleaners'
+cleaners: 'basic_cleaners'
 
 # DATASET
 seed: 42
@@ -24,9 +24,9 @@ max_mel_len: 1200
 
 # TRAINING (overrides loaded model config)
 training_schedule:
-  - [10, 1e-3, 5_000, 32]
-  - [5,  1e-4, 10_000, 8]
-  - [2,  1e-4, 30_000, 8]
+  - [1, 1e-3, 5_000, 32]
+  - [1,  1e-4, 10_000, 8]
+  - [1,  1e-4, 30_000, 8]
 log_dir: /tmp/tacogan
 steps_to_eval: 500
 steps_to_checkpoint: 1_000
