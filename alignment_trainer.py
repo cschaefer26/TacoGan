@@ -116,7 +116,7 @@ class AlignmentTrainer:
 
                 first_pred = pred[0].max(1)[1].detach().cpu().numpy().tolist()
                 first_pred = self.tokenizer.decode(first_pred)
-                first_target = seqs[0].max(1)[1].detach().cpu().numpy().tolist()
+                first_target = seqs[0].detach().cpu().numpy().tolist()
                 first_target = self.tokenizer.decode(first_target)
                 print()
                 print(first_pred)
