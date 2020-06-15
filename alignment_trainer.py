@@ -124,6 +124,7 @@ class AlignmentTrainer:
                     print(f'pred dec: {first_pred_d}')
                     print(f'target: {first_target}')
                     print(f'target dec: {first_target_d}')
+                    print(first_pred)
 
 
                 """
