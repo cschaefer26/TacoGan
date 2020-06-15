@@ -114,7 +114,7 @@ class AlignmentTrainer:
                 if model.step % cfg.steps_to_checkpoint == 0:
                     self.save_model(model, optimizer, step=model.get_step())
 
-                first_pred = pred[0].max(1)[1].detach().cpu().numpy().tolist()
+                first_pred = pred.transpose(1, 2)[0].max(1)[1].detach().cpu().numpy().tolist()
                 first_pred_d = self.tokenizer.decode(first_pred)
                 first_target = seqs[0].detach().cpu().numpy().tolist()
                 first_target_d = self.tokenizer.decode(first_target)
