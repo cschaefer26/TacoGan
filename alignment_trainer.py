@@ -117,12 +117,13 @@ class AlignmentTrainer:
                 first_pred = pred[0].max(1)[1].detach().cpu().numpy().tolist()
                 first_pred_d = self.tokenizer.decode(first_pred)
                 first_target = seqs[0].detach().cpu().numpy().tolist()
-                first_target = self.tokenizer.decode(first_target)
+                first_target_d = self.tokenizer.decode(first_target)
                 if model.get_step() % 100 == 0:
                     print()
                     print(f'pred: {first_pred}')
                     print(f'pred dec: {first_pred_d}')
                     print(f'target: {first_target}')
+                    print(f'target dec: {first_target_d}')
 
 
                 """
