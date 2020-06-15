@@ -10,6 +10,7 @@ class Tokenizer:
         self.symbols = list(symbols)
         self.symbol_id = {s: i for i, s in enumerate(symbols, 1)}
         self.id_symbol = {i: s for i, s in enumerate(symbols, 1)}
+        self.id_symbol[0] = '_'
 
     def encode(self, text: str) -> List[int]:
         text = self.cleaner(text)

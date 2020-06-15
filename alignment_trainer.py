@@ -120,11 +120,11 @@ class AlignmentTrainer:
                 first_target_d = self.tokenizer.decode(first_target)
                 if model.get_step() % 100 == 0:
                     print()
-                    print(f'pred: {first_pred}')
+                    #print(f'pred: {first_pred}')
                     print(f'pred dec: {first_pred_d}')
-                    print(f'target: {first_target}')
+                   # print(f'target: {first_target}')
                     print(f'target dec: {first_target_d}')
-                    print(first_pred)
+                    #print(first_pred)
 
 
                 """
