@@ -58,13 +58,15 @@ class Audio:
         return wav
 
     def _normalize(self, mel):
-        mel = (mel - self.min_db) / -self.min_db
-        mel = np.clip(mel, 0, 1)
-        return mel * 2. - 1.
+        return mel
+        #mel = (mel - self.min_db) / -self.min_db
+        #mel = np.clip(mel, 0, 1)
+        #return mel * 2. - 1.
 
     def _denormalize(self, mel):
-        mel = (mel + 1.) / 2.
-        return np.clip(mel, 0, 1) * -self.min_db + self.min_db
+        return mel
+        #mel = (mel + 1.) / 2.
+        #return np.clip(mel, 0, 1) * -self.min_db + self.min_db
 
     def _compress(self, mel):
         mel = np.maximum(1e-5, mel)
