@@ -119,7 +119,7 @@ class AlignmentTrainer:
                 first_target = seqs[0].detach().cpu().numpy().tolist()
                 first_target_d = self.tokenizer.decode(first_target)
 
-                first_pred_probs = pred.transpose(0, 1)[0][:mel_lens[0]].detach().cpu().numpy()
+                first_pred_probs = torch.softmax(pred, dim=-1).transpose(0, 1)[0][:mel_lens[0]].detach().cpu().numpy()
 
                 if model.get_step() % 100 == 0:
                     print()
