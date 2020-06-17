@@ -121,7 +121,7 @@ class AlignmentTrainer:
 
                 first_pred_probs = torch.softmax(pred, dim=-1).transpose(0, 1)[0][:mel_lens[0]].detach().cpu().numpy()
 
-                if model.get_step() % 100 == 0:
+                if model.get_step() % 10000 == 0:
                     print()
                     #print(f'pred: {first_pred}')
                     print(f'pred dec: {first_pred_d}')
