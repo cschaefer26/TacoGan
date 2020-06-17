@@ -128,7 +128,7 @@ class AlignmentTrainer:
                    # print(f'target: {first_target}')
                     print(f'target dec: {first_target_d}')
                     np.save(f'/tmp/pred_{model.get_step()}.npy', first_pred_probs)
-                    np.save(f'/tmp/target_{model.get_step()}.npy', seqs[0].detach().cpu().numpy())
+                    np.save(f'/tmp/target_{model.get_step()}.npy', seqs[0][:seq_lens[0]].detach().cpu().numpy())
                     np.save(f'/tmp/target_dec_{model.get_step()}.npy', first_target_d)
                     #print(first_pred)
 
