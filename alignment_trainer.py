@@ -1,5 +1,5 @@
 import time
-
+import numpy as np
 import torch
 import torch.nn.functional as F
 from torch.nn.functional import log_softmax
@@ -118,13 +118,20 @@ class AlignmentTrainer:
                 first_pred_d = self.tokenizer.decode(first_pred)
                 first_target = seqs[0].detach().cpu().numpy().tolist()
                 first_target_d = self.tokenizer.decode(first_target)
+
+                first_pred_probs = pred.transpose(0, 1)[0][:mel_lens[0]].detach().cpu().numpy()
+
                 if model.get_step() % 100 == 0:
                     print()
                     #print(f'pred: {first_pred}')
                     print(f'pred dec: {first_pred_d}')
                    # print(f'target: {first_target}')
                     print(f'target dec: {first_target_d}')
+                    np.save(f'/tmp/pred_{model.get_step()}.npy', first_pred_probs)
+                    np.save(f'/tmp/target_{model.get_step()}.npy', seqs[0].detach().cpu().numpy())
+                    np.save(f'/tmp/target_dec_{model.get_step()}.npy', first_target_d)
                     #print(first_pred)
+
 
 
                 """
