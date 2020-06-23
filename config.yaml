@@ -14,8 +14,9 @@ ref_db: 20
 n_workers: 16
 
 # TEXT
-symbols: "!'(),.:;?_- ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜäöüabcdefghijklmnopqrstuvwxyz"
+language: "en"
 cleaners: 'english_cleaners'
+symbols: "!'(),.:;?- ˈˌːˑiyɨʉɯuɪʏʊeøɘəɵɤoɛœɜɞʌɔæɐaɶɑɒᵻʘɓǀɗǃʄǂɠǁʛpbtdʈɖcɟkɡqɢʔɴŋɲɳnɱmʙrʀⱱɾɽɸβfvθðszʃʒʂʐçʝxɣχʁħʕhɦɬɮʋɹɻjɰlɭʎʟʍwɥʜʢʡɕʑɺɧɚ˞ɫ"
 
 # DATASET
 seed: 42

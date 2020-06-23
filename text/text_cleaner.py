@@ -1,9 +1,11 @@
 """ adapted from https://github.com/keithito/tacotron """
 
 import re
+from abc import ABC, abstractmethod
 from typing import Callable
 
 import unidecode
+from phonemizer.phonemize import phonemize
 
 from text.numbers_de import normalize_numbers_de
 from text.numbers_en import normalize_numbers_en
@@ -29,32 +31,53 @@ def collapse_whitespace(text):
     return re.sub(_whitespace_re, ' ', text)
 
 
-def basic_cleaners(text):
-    text = text.lower()
-    text = collapse_whitespace(text)
-    return text
+def to_phonemes(text, language):
+    return phonemize(text, language=language, backend='espeak', strip=True,
+                     preserve_punctuation=True, with_stress=False, njobs=1,
+                     punctuation_marks=';:,.!?¡¿—…"«»“”()', language_switch='remove-flags')
 
 
-def english_cleaners(text):
-    text = unidecode.unidecode(text)
-    text = text.lower()
-    text = normalize_numbers_en(text)
-    text = collapse_whitespace(text)
-    return text
+class Cleaner(ABC):
+
+    @abstractmethod
+    def __call__(self, text):
+        raise NotImplementedError()
 
 
-def german_cleaners(text):
-    text = text.lower()
-    text = normalize_numbers_de(text)
-    text = collapse_whitespace(text)
-    return text
+class BasicCleaner(Cleaner):
+
+    def __init__(self, language):
+        self.language = language
+
+    def __call__(self, text):
+        text = collapse_whitespace(text)
+        text = to_phonemes(text, self.language)
+        return text
 
 
-def get_cleaners(cleaners_str: str) -> Callable[[str], str]:
-    if cleaners_str == 'english_cleaners':
-        return english_cleaners
-    elif cleaners_str == 'german_cleaners':
-        return german_cleaners
+class EnglishCleaner(Cleaner):
+
+    def __call__(self, text):
+        text = unidecode.unidecode(text)
+        text = normalize_numbers_en(text)
+        text = collapse_whitespace(text)
+        text = to_phonemes(text, 'en')
+        return text
+
+
+class GermanCleaner(Cleaner):
+
+    def __call__(self, text):
+        text = normalize_numbers_de(text)
+        text = collapse_whitespace(text)
+        text = to_phonemes(text, 'de')
+        return text
+
+
+def get_cleaner(language: str) -> Callable[[str], str]:
+    if language == 'en':
+        return EnglishCleaner()
+    elif language == 'de':
+        return GermanCleaner()
     else:
-        raise ValueError(f'cleaners not supported: {cleaners_str}')
-
+        return BasicCleaner(language)

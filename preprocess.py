@@ -1,10 +1,14 @@
 import argparse
 from random import Random
-from typing import Tuple
+from typing import Tuple, Callable
 
 import numpy as np
 from pathlib import Path
+
+from phonemizer.phonemize import phonemize
+
 from audio import Audio
+from text.text_cleaner import Cleaner, get_cleaner
 from utils.config import Config
 from utils.display import display_params, progbar
 from utils.paths import Paths
@@ -14,16 +18,27 @@ from multiprocessing import Pool, cpu_count
 
 class Preprocessor:
 
-    def __init__(self, audio, mel_path) -> None:
+    def __init__(self,
+                 audio: Audio,
+                 mel_path: str,
+                 cleaner: Cleaner,
+                 text_dict: dict,
+                 language: str) -> None:
         self.mel_path = mel_path
         self.audio = audio
+        self.cleaner = cleaner
+        self.text_dict = text_dict
+        self.language = language
 
-    def process_wav(self, path: Path) -> Tuple[str, int]:
+    def process_file(self, path: Path) -> Tuple[str, int, str]:
         mel_id = path.stem
         wav = audio.load_wav(path)
         mel = audio.wav_to_mel(wav)
         np.save(self.mel_path/f'{mel_id}.npy', mel, allow_pickle=False)
-        return mel_id, mel.shape[0]
+        text = self.text_dict[mel_id]
+        text = self.cleaner(text)
+        print(text)
+        return mel_id, mel.shape[0], text
 
 
 def read_metafile(path: str):
@@ -46,26 +61,30 @@ if __name__ == '__main__':
     parser.add_argument(
         '--config', '-c', help='Point to the config.', default='config.yaml')
     args = parser.parse_args()
-    cfg = Config.load(args.config)
 
+    cfg = Config.load(args.config)
     audio = Audio(cfg)
     paths = Paths()
-    preprocessor = Preprocessor(audio, paths.mel)
-
+    text_dict = read_metafile(args.path)
+    cleaner = get_cleaner(cfg.language)
+    preprocessor = Preprocessor(audio=audio, mel_path=paths.mel,
+                                cleaner=cleaner, text_dict=text_dict, language=cfg.language)
     files = get_files(args.path)
     n_workers = min(cpu_count()-1, cfg.n_workers)
-    pool = Pool(processes=n_workers)
-    map_func = pool.imap_unordered(preprocessor.process_wav, files)
-    dataset = []
 
-    text_dict = read_metafile(args.path)
     display_params([
         ('Num Train', len(files)-cfg.n_val), ('Num Val', cfg.n_val),
         ('Num Mels', cfg.n_mels), ('Win Length', cfg.win_length),
         ('Hop Length', cfg.hop_length), ('Min Frequency', cfg.fmin),
         ('Sample Rate', cfg.sample_rate), ('CPU Usage', f'{n_workers}/{cpu_count()}'),
     ])
-    for i, (mel_id, mel_len) in enumerate(map_func, 1):
+
+    pool = Pool(processes=n_workers)
+    map_func = pool.imap_unordered(preprocessor.process_file, files)
+
+    dataset = []
+    texts = []
+    for i, (mel_id, mel_len, text) in enumerate(map_func, 1):
         dataset += [(mel_id, mel_len)]
         progbar(i, len(files), f'{i}/{len(files)}')
 
