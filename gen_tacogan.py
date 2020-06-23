@@ -2,7 +2,7 @@ import argparse
 
 import torch
 
-from audio import Audio
+from preprocessing.audio import Audio
 from model.io import ModelPackage
 from text.text_cleaner import get_cleaners
 from text.tokenizer import Tokenizer

@@ -23,8 +23,13 @@ class Config:
             raise AttributeError(f'Config does not contain item: {item}!')
 
     @classmethod
-    def from_string(cls, string: str) -> 'Config':
+    def load(cls, path: Union[Path, str]):
+        with open(str(path), 'r', encoding='utf-8') as f:
+            cfg = ruamel.yaml.load(f, Loader=ruamel.yaml.Loader)
+            return Config(**cfg)
 
+    @classmethod
+    def from_string(cls, string: str) -> 'Config':
         with StringIO(string) as string_io:
             cfg = ruamel.yaml.load(string_io, Loader=ruamel.yaml.Loader)
             return Config(**cfg)

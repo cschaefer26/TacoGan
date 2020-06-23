@@ -11,6 +11,7 @@ class Paths:
         self.log = Path('log').expanduser().resolve()
         self.outputs = Path('outputs').expanduser().resolve()
         self.mel = self.data / 'mel'
+        self.dur = self.data / 'dur'
         self.create_paths()
 
     def create_paths(self):

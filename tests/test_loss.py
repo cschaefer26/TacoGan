@@ -1,6 +1,6 @@
 import unittest
 import torch
-from losses import MaskedL1, MaskedBCE
+from utils.losses import MaskedL1, MaskedBCE
 
 
 class TestLoss(unittest.TestCase):

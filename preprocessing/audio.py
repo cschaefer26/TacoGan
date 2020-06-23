@@ -13,8 +13,7 @@ class Audio:
         self.win_length = cfg.win_length
         self.n_fft = cfg.n_fft
         self.fmin = cfg.fmin
-        self.min_db = cfg.min_db
-        self.ref_db = cfg.ref_db
+        self.fmax = cfg.fmax
 
     def load_wav(self, path):
         wav, _ = librosa.load(path, sr=self.sample_rate)
@@ -38,14 +37,12 @@ class Audio:
             n_mels=self.n_mels,
             fmin=self.fmin)
         mel = mel.T
-        mel = self._compress(mel)
         return self._normalize(mel)
 
     def griffinlim(self, mel, n_iter=32):
         denormalized = self._denormalize(mel)
-        amp_mel = self._decompress(denormalized)
         S = librosa.feature.inverse.mel_to_stft(
-            amp_mel,
+            denormalized,
             power=1,
             sr=self.sample_rate,
             n_fft=self.n_fft,
@@ -57,21 +54,13 @@ class Audio:
             win_length=self.win_length)
         return wav
 
-    def _normalize(self, mel):
-        mel = (mel - self.min_db) / -self.min_db
-        mel = np.clip(mel, 0, 1)
-        return mel * 2. - 1.
+    def _normalize(self, S):
+        S = np.clip(S, a_min=1e-5, a_max=None)
+        return np.log(S)
 
-    def _denormalize(self, mel):
-        mel = (mel + 1.) / 2.
-        return np.clip(mel, 0, 1) * -self.min_db + self.min_db
+    def _denormalize(self, S):
+        return np.exp(S)
 
-    def _compress(self, mel):
-        mel = np.maximum(1e-5, mel)
-        return self.ref_db * np.log10(mel)
-
-    def _decompress(self, mel):
-        return np.power(10.0, mel / self.ref_db)
 
 
 if __name__ == '__main__':

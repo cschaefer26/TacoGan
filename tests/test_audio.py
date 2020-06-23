@@ -3,7 +3,7 @@ import numpy as np
 import os
 import unittest
 from pathlib import Path
-from audio import Audio
+from preprocessing.audio import Audio
 from utils.config import Config
 
 

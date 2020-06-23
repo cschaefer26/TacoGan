@@ -3,6 +3,8 @@ import argparse
 import torch
 from torch.optim.adam import Adam
 
+from model.aligner import Aligner
+from trainer.aligner_trainer import AlignerTrainer
 from trainer.forward_trainer import ForwardTrainer
 from model.forward_tacotron import ForwardTacotron
 from utils.config import Config
@@ -21,7 +23,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='Entrypoint for training the TacoGan model.')
     parser.add_argument(
-        '--config', '-c', help='Point to the config.', default='config.yaml')
+        '--config', '-c', help='Point to the config.', default='config/config.yaml')
 
     args = parser.parse_args()
     device = get_device()
@@ -32,7 +34,7 @@ if __name__ == '__main__':
     #latest_ckpt = get_latest_file(ckpt_path, extension='.zip')
     print(f'\nInitialising new model from {args.config}')
     print(f'Checkpoint path: {ckpt_path}')
-    model = ForwardTacotron.from_config(cfg)
+    model = Aligner.from_config(cfg)
     opti = Adam(model.parameters())
-    trainer = ForwardTrainer(cfg)
+    trainer = AlignerTrainer(cfg)
     trainer.train(model, opti)

@@ -6,11 +6,10 @@ from torch.optim.optimizer import Optimizer
 from torch.utils.data.dataloader import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
-from audio import Audio
-from dataset import new_audio_datasets
-from losses import MaskedL1
+from preprocessing.audio import Audio
+from utils.dataset import new_audio_datasets
+from utils.losses import MaskedL1
 from model.forward_tacotron import ForwardTacotron
-from model.io import ModelPackage
 from utils.common import Averager
 from utils.config import Config
 from utils.decorators import ignore_exception
@@ -27,7 +26,7 @@ class Session:
                  max_step: int,
                  bs: int,
                  train_set: DataLoader,
-                 val_set: DataLoader) -> None:
+                 val_set: DataLoader = None) -> None:
         self.index = index
         self.r = r
         self.lr = lr
@@ -51,7 +50,7 @@ class ForwardTrainer:
     def train(self, model: ForwardTacotron, opti: Optimizer):
         for i, session_params in enumerate(self.cfg.training_schedule, 1):
             r, lr, max_step, bs = session_params
-            if model.tacotron.step < max_step:
+            if model.get_step() < max_step:
                 train_set, val_set = new_audio_datasets(
                     paths=self.paths, batch_size=bs, r=r, cfg=self.cfg)
                 session = Session(
@@ -150,7 +149,7 @@ class ForwardTrainer:
             model.save(self.ckpt_path/f'model_step_{step}.zip')
 
     @ignore_exception
-    def generate_samples(self, model: ModelPackage,
+    def generate_samples(self, model: ForwardTacotron,
                          batch: torch.Tensor, pred: torch.Tensor):
         seqs, mels, stops, ids, lens = batch
         lin_mels, post_mels, att = pred

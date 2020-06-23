@@ -1,11 +1,11 @@
 import argparse
 from random import Random
-from typing import Tuple, Callable
+from typing import Tuple
 
 import numpy as np
 from pathlib import Path
 
-from audio import Audio
+from preprocessing.audio import Audio
 from text.text_cleaner import Cleaner, get_cleaner
 from utils.config import Config
 from utils.display import display_params, progbar
@@ -35,6 +35,7 @@ class Preprocessor:
         np.save(self.mel_path/f'{mel_id}.npy', mel, allow_pickle=False)
         text = self.text_dict[mel_id]
         text = self.cleaner(text)
+        print(mel.shape)
         return mel_id, mel.shape[0], text
 
 
@@ -56,7 +57,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--path', '-p', help='Point to the data path, expects LJSpeech-like folder.')
     parser.add_argument(
-        '--config', '-c', help='Point to the config.', default='config.yaml')
+        '--config', '-c', help='Point to the config.', default='config/config.yaml')
     args = parser.parse_args()
 
     cfg = Config.load(args.config)
@@ -72,7 +73,7 @@ if __name__ == '__main__':
     display_params([
         ('Num Train', len(files)-cfg.n_val), ('Num Val', cfg.n_val),
         ('Num Mels', cfg.n_mels), ('Win Length', cfg.win_length),
-        ('Hop Length', cfg.hop_length), ('Min Frequency', cfg.fmin),
+        ('Hop Length', cfg.hop_length), ('Max Frequency', cfg.fmax),
         ('Sample Rate', cfg.sample_rate), ('CPU Usage', f'{n_workers}/{cpu_count()}'),
     ])
 

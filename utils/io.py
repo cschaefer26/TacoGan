@@ -3,7 +3,21 @@ import shutil
 import sys
 import pickle
 import ruamel.yaml
+import torch
 from pathlib import Path
+
+from torch.nn import Module
+from torch.optim.optimizer import Optimizer
+
+from utils.config import Config
+
+
+def save_model(save_path: str, model: Module, opti: Optimizer, cfg: Config):
+    torch.save({
+        'model': model.state_dict(),
+        'optim': opti.state_dict(),
+        'config': cfg.to_string()
+    }, save_path)
 
 
 def get_files(path: str, extension='.wav'):

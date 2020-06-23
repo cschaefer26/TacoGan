@@ -2,8 +2,8 @@ import numpy as np
 import os
 import unittest
 from pathlib import Path
-from audio import Audio
-from dataset import AudioDataset, collate_fn
+from preprocessing.audio import Audio
+from utils.dataset import AudioDataset, collate_forward
 from text.tokenizer import Tokenizer
 from utils.config import Config
 
@@ -45,7 +45,7 @@ class TestDataset(unittest.TestCase):
         mel_lens = (2, 3)
         batch = tuple(zip(seqs, mels, ids, mel_lens))
 
-        seqs, mels, stops, ids, mel_lens = collate_fn(batch=batch, r=3, silence_len=0)
+        seqs, mels, stops, ids, mel_lens = collate_forward(batch=batch, r=3, silence_len=0)
 
         expected_seqs = np.array([[1, 2, 0], [1, 2, 3]])
         np.testing.assert_almost_equal(seqs, expected_seqs, decimal=8)
