@@ -49,8 +49,8 @@ class AlignerTrainer:
         self.criterion = CTCLoss()
 
     def train(self, model: Aligner, opti: Optimizer):
-        for i, session_params in enumerate(self.cfg.training_schedule, 1):
-            r, lr, max_step, bs = session_params
+        for i, session_params in enumerate(self.cfg.aligner_training_schedule, 1):
+            lr, max_step, bs = session_params
             if model.get_step() < max_step:
                 train_set = new_aligner_dataset(
                     paths=self.paths, batch_size=bs, cfg=self.cfg)
@@ -102,7 +102,7 @@ class AlignerTrainer:
                       f'| {steps_per_s:#.2} steps/s | Avg. Loss: {loss_avg.get():#.4} '
                 stream(msg)
 
-                if model.get_step() % cfg.steps_to_checkpoint == 0:
+                if model.get_step() % cfg.aligner_steps_to_checkpoint == 0:
                     self.save_model(model, opti, step=model.get_step())
 
                 loss_avg.reset()
