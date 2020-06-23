@@ -5,8 +5,6 @@ from typing import Tuple, Callable
 import numpy as np
 from pathlib import Path
 
-from phonemizer.phonemize import phonemize
-
 from audio import Audio
 from text.text_cleaner import Cleaner, get_cleaner
 from utils.config import Config
@@ -37,7 +35,6 @@ class Preprocessor:
         np.save(self.mel_path/f'{mel_id}.npy', mel, allow_pickle=False)
         text = self.text_dict[mel_id]
         text = self.cleaner(text)
-        print(text)
         return mel_id, mel.shape[0], text
 
 

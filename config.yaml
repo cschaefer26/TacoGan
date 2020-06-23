@@ -33,19 +33,16 @@ steps_to_eval: 500
 steps_to_checkpoint: 1_000
 silence_len: 50 # extra mel steps with silence as stopping criterion
 
-# TACOTRON PARAMS
-embed_dims: 256
-encoder_dims: 128
-decoder_dims: 256
-postnet_dims: 128
-encoder_K: 16
-lstm_dims: 512
-postnet_K: 8
-num_highways: 4
-dropout: 0.5
-stop_threshold: -0.8
 
-# GAN PARAMS
-gan_conv_dim: 256
-gan_rnn_dim: 256
-gan_dropout: 0.5
+# FORWARD PARAMS
+embed_dims: 256
+durpred_conv_dims: 256
+durpred_rnn_dims: 64
+durpred_dropout: 0.5
+rnn_dim: 256
+prenet_k: 16
+prenet_dims: 256
+postnet_k: 8
+postnet_dims: 256
+highways: 4
+dropout: 0.1

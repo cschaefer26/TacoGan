@@ -1,6 +1,6 @@
 from pathlib import Path
 from typing import Union
-
+from io import StringIO
 import ruamel.yaml
 
 
@@ -23,15 +23,17 @@ class Config:
             raise AttributeError(f'Config does not contain item: {item}!')
 
     @classmethod
-    def load(cls, path: Union[Path, str]):
-        with open(str(path), 'r', encoding='utf-8') as f:
-            cfg = ruamel.yaml.load(f, Loader=ruamel.yaml.Loader)
+    def from_string(cls, string: str) -> 'Config':
+
+        with StringIO(string) as string_io:
+            cfg = ruamel.yaml.load(string_io, Loader=ruamel.yaml.Loader)
             return Config(**cfg)
 
-    def save(self, path: Path) -> None:
+    def to_string(self) -> str:
         yaml = ruamel.yaml.YAML()
-        with open(str(path), 'w', encoding='utf-8') as f:
-            yaml.dump(self.__dict__, f)
+        with StringIO() as string_io:
+            yaml.dump(self.__dict__, string_io)
+            return string_io.getvalue()
 
     def update(self, new_cfg: 'Config') -> 'Config':
         """ Overrides training params """
@@ -39,3 +41,10 @@ class Config:
             if p in new_cfg.__dict__:
                 self.__dict__[p] = getattr(new_cfg, p)
         return self
+
+
+if __name__ == '__main__':
+    cfg = Config(foo='bar')
+    string = cfg.to_string()
+    cfg_new = Config.from_string(string)
+    print(cfg_new.__dict__)

@@ -11,7 +11,7 @@ def get_files(path: str, extension='.wav'):
     return list(path.rglob(f'*{extension}'))
 
 
-def get_latest_file(path: str, extension='.zip'):
+def get_latest_file(path: str, extension='.pyt'):
     files = get_files(path, extension=extension)
     if len(files) > 0:
         latest_file = max(files, key=os.path.getctime)

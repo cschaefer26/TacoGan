@@ -2,12 +2,14 @@ import time
 
 import torch
 import torch.nn.functional as F
+from torch.optim.optimizer import Optimizer
 from torch.utils.data.dataloader import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
 from audio import Audio
 from dataset import new_audio_datasets
 from losses import MaskedL1
+from model.forward_tacotron import ForwardTacotron
 from model.io import ModelPackage
 from utils.common import Averager
 from utils.config import Config
@@ -35,7 +37,7 @@ class Session:
         self.val_set = val_set
 
 
-class Trainer:
+class ForwardTrainer:
 
     def __init__(self, cfg: Config):
         self.cfg = cfg
@@ -46,7 +48,7 @@ class Trainer:
         self.writer = SummaryWriter(log_dir=log_dir, comment='v1')
         self.criterion = MaskedL1()
 
-    def train(self, model: ModelPackage):
+    def train(self, model: ForwardTacotron, opti: Optimizer):
         for i, session_params in enumerate(self.cfg.training_schedule, 1):
             r, lr, max_step, bs = session_params
             if model.tacotron.step < max_step:
@@ -55,37 +57,35 @@ class Trainer:
                 session = Session(
                     index=i, r=r, lr=lr, max_step=max_step,
                     bs=bs, train_set=train_set, val_set=val_set)
-                self.train_session(model, session)
+                self.train_session(model, opti, session)
 
-    def train_session(self, model: ModelPackage, session: Session):
+    def train_session(self, model: ForwardTacotron, opti: Optimizer, session: Session):
         model.r = session.r
         cfg = self.cfg
-        tacotron, gan = model.tacotron, model.gan
-        taco_opti, gen_opti, disc_opti = \
-            model.taco_opti, model.gen_opti, model.disc_opti
-        device = next(tacotron.parameters()).device
+        device = next(model.parameters()).device
         display_params([
             ('Session', session.index), ('Reduction', session.r),
             ('Max Step', session.max_step), ('Learning Rate', session.lr),
             ('Batch Size', session.bs), ('Steps per Epoch', len(session.train_set))
         ])
 
-        for g in taco_opti.param_groups:
+        for g in opti.param_groups:
             g['lr'] = session.lr
 
         loss_avg = Averager()
         duration_avg = Averager()
 
-        while tacotron.get_step() <= session.max_step:
+        while model.get_step() <= session.max_step:
 
             for i, (seqs, mels, stops, ids, lens) in enumerate(session.train_set):
                 seqs, mels, stops, lens = \
                     seqs.to(device), mels.to(device), stops.to(device), lens.to(device)
                 t_start = time.time()
-                block_step = tacotron.get_step() % cfg.steps_to_eval + 1
 
-                tacotron.train()
-                lin_mels, post_mels, att = tacotron(seqs, mels)
+                block_step = model.get_step() % cfg.steps_to_eval + 1
+
+                model.train()
+                lin_mels, post_mels, durs = model(seqs, mels)
 
                 lin_loss = self.criterion(lin_mels, mels, lens)
                 post_loss = self.criterion(post_mels, mels, lens)
@@ -93,34 +93,34 @@ class Trainer:
                 loss = lin_loss + post_loss
                 loss_avg.add(loss)
 
-                taco_opti.zero_grad()
+                opti.zero_grad()
                 loss.backward()
-                torch.nn.utils.clip_grad_norm_(tacotron.parameters(), 1.0)
-                taco_opti.step()
+                torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+                opti.step()
 
                 duration_avg.add(time.time() - t_start)
                 steps_per_s = 1. / duration_avg.get()
-                self.writer.add_scalar('Loss/train', loss, tacotron.get_step())
-                self.writer.add_scalar('Params/reduction_factor', session.r, tacotron.get_step())
-                self.writer.add_scalar('Params/batch_sze', session.bs, tacotron.get_step())
-                self.writer.add_scalar('Params/learning_rate', session.lr, tacotron.get_step())
+                self.writer.add_scalar('Loss/train', loss, model.get_step())
+                self.writer.add_scalar('Params/reduction_factor', session.r, model.get_step())
+                self.writer.add_scalar('Params/batch_sze', session.bs, model.get_step())
+                self.writer.add_scalar('Params/learning_rate', session.lr, model.get_step())
 
-                msg = f'{block_step}/{cfg.steps_to_eval} | Step: {tacotron.get_step()} ' \
+                msg = f'{block_step}/{cfg.steps_to_eval} | Step: {model.get_step()} ' \
                       f'| {steps_per_s:#.2} steps/s | Avg. Loss: {loss_avg.get():#.4} '
                 stream(msg)
 
-                if tacotron.step % cfg.steps_to_checkpoint == 0:
-                    self.save_model(model, step=tacotron.get_step())
+                if model.get_step() % cfg.steps_to_checkpoint == 0:
+                    self.save_model(model, opti, step=model.get_step())
 
-                if tacotron.step % self.cfg.steps_to_eval == 0:
+                if model.get_step() % self.cfg.steps_to_eval == 0:
                     val_loss = self.evaluate(model, session.val_set, msg)
-                    self.writer.add_scalar('Loss/val', val_loss, tacotron.step)
+                    self.writer.add_scalar('Loss/val', val_loss, model.get_step())
                     self.save_model(model)
                     stream(msg + f'| Val Loss: {float(val_loss):#0.4} \n')
                     loss_avg.reset()
                     duration_avg.reset()
 
-            if tacotron.step > session.max_step:
+            if model.get_step() > session.max_step:
                 return
 
     def evaluate(self, model, val_set, msg) -> float:
@@ -144,7 +144,7 @@ class Trainer:
         val_loss /= len(val_set)
         return float(val_loss)
 
-    def save_model(self, model: ModelPackage, step=None):
+    def save_model(self, model: ForwardTacotron, opti: Optimizer, step=None):
         model.save(self.ckpt_path/'latest_model.zip')
         if step is not None:
             model.save(self.ckpt_path/f'model_step_{step}.zip')
