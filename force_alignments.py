@@ -54,7 +54,7 @@ if __name__ == '__main__':
         for b in range(batch_size):
             seq_len, mel_len, mel_id = seq_lens[b], mel_lens[b], mel_ids[b]
             pred = pred_batch[b, :mel_len]
-            target = seqs[b, :seq_len].numpy()
+            target = seqs[b, :seq_len].cpu().numpy()
             target_len = target.shape[0]
             pred_len = pred.shape[0]
             pred_max = np.zeros((pred_len, target_len))
