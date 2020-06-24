@@ -32,7 +32,7 @@ if __name__ == '__main__':
     checkpoint = torch.load(args.model, map_location=device)
 
     cfg = Config.from_string(checkpoint['config'])
-    model = Aligner.from_config(cfg)
+    model = Aligner.from_config(cfg).to(device)
     model.load_state_dict(checkpoint['model'])
     model.eval()
     paths = Paths()
