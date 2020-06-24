@@ -35,6 +35,6 @@ if __name__ == '__main__':
     print(f'\nInitialising new model from {args.config}')
     print(f'Checkpoint path: {ckpt_path}')
     model = Aligner.from_config(cfg).to(device)
-    opti = Adam(model.parameters()).to(device)
+    opti = Adam(model.parameters())
     trainer = AlignerTrainer(cfg)
     trainer.train(model, opti)
