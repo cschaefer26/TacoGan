@@ -32,7 +32,7 @@ if __name__ == '__main__':
     #latest_ckpt = get_latest_file(ckpt_path, extension='.zip')
     print(f'\nInitialising new model from {args.config}')
     print(f'Checkpoint path: {ckpt_path}')
-    model = ForwardTacotron.from_config(cfg)
+    model = ForwardTacotron.from_config(cfg).to(device)
     opti = Adam(model.parameters())
     trainer = ForwardTrainer(cfg)
     trainer.train(model, opti)
