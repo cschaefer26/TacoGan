@@ -27,7 +27,6 @@ forward_training_schedule:
   - [1e-3, 5_000, 32]
   - [1e-4, 10_000, 8]
   - [1e-4, 30_000, 8]
-forward_log_dir: /tmp/tacogan
 forward_steps_to_eval: 500
 forward_steps_to_checkpoint: 1_000
 
@@ -35,9 +34,8 @@ forward_steps_to_checkpoint: 1_000
 # TRAINING ALIGNER (overrides loaded model config)
 aligner_training_schedule:
   - [1e-4, 100_000, 8]
-aligner_log_dir: /tmp/tacogan
 aligner_steps_to_eval: 500
-aligner_steps_to_checkpoint: 1_000
+aligner_steps_to_checkpoint: 10
 
 
 
