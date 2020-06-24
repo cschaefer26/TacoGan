@@ -93,7 +93,7 @@ class ForwardTrainer:
                 m1_loss = self.l1_loss(m1_hat, mels, mel_lens)
                 m2_loss = self.l1_loss(m2_hat, mels, mel_lens)
 
-                dur_loss = self.l1_loss(dur_hat, durs, seq_lens)
+                dur_loss = self.l1_loss(dur_hat.unsqueeze(-1), durs.unsqueeze(-1), seq_lens)
 
                 loss = m1_loss + m2_loss + dur_loss
                 opti.zero_grad()
@@ -118,11 +118,14 @@ class ForwardTrainer:
                 if model.get_step() % cfg.forward_steps_to_checkpoint == 0:
                     self.save_model(model, opti, step=model.get_step())
 
+                if model.get_step() % cfg.forward_steps_to_plot == 0:
+                    self.generate_plots(model, session.val_set)
+
                 if model.get_step() % self.cfg.forward_steps_to_eval == 0:
                     val_mel_loss, val_dur_loss = self.evaluate(model, session.val_set)
                     self.writer.add_scalar('Mel_Loss/val', val_mel_loss, model.get_step())
                     self.writer.add_scalar('Dur_Loss/val', val_mel_loss, model.get_step())
-                    self.save_model(model)
+                    self.save_model(model, opti)
                     stream(msg + f'| Val Loss: {float(val_mel_loss):#0.4} \n')
 
             mel_loss_avg.reset()
@@ -148,7 +151,7 @@ class ForwardTrainer:
                 m2_hat = m2_hat.transpose(1, 2)
                 m1_loss = self.l1_loss(m1_hat, mels, mel_lens)
                 m2_loss = self.l1_loss(m2_hat, mels, mel_lens)
-                dur_loss = self.l1_loss(dur_hat, durs, seq_lens)
+                dur_loss = self.l1_loss(dur_hat.unsqueeze(-1), durs.unsqueeze(-1), seq_lens)
                 m_val_loss += m1_loss.item() + m2_loss.item()
                 dur_val_loss += dur_loss.item()
         return m_val_loss / len(val_set), dur_val_loss / len(val_set)
@@ -159,20 +162,19 @@ class ForwardTrainer:
             save_model(self.ckpt_path / f'forward_step{step}.pyt', model, opti, self.cfg)
 
     @ignore_exception
-    def generate_samples(self, model: ForwardTacotron,
-                         batch: torch.Tensor,
-                         pred: torch.Tensor):
+    def generate_plots(self, model: ForwardTacotron, val_set: DataLoader):
+        batch = next(iter(val_set))
         seqs, mels, durs, seq_lens, mel_lens, ids = batch
-        lin_mels, post_mels, att = pred
+        mels = mels.transpose(1, 2)
+        m1_hat, m2_hat, dur_hat = model(seqs, mels, durs)
+        mels = mels.transpose(1, 2)
+        m2_hat = m2_hat.transpose(1, 2)
         mel_sample = mels.transpose(1, 2)[0, :mel_lens[0]].detach().cpu().numpy()
-        gta_sample = post_mels.transpose(1, 2)[0, :mel_lens[0]].detach().cpu().numpy()
-        att_sample = att[0].detach().cpu().numpy()
+        gta_sample = m2_hat.transpose(1, 2)[0, :mel_lens[0]].detach().cpu().numpy()
         target_fig = plot_mel(mel_sample)
         gta_fig = plot_mel(gta_sample)
-        att_fig = plot_attention(att_sample)
         self.writer.add_figure('Mel/target', target_fig, model.get_step())
         self.writer.add_figure('Mel/ground_truth_aligned', gta_fig, model.get_step())
-        self.writer.add_figure('Attention/ground_truth_aligned', att_fig, model.get_step())
 
         target_wav = self.audio.griffinlim(mel_sample, 32)
         gta_wav = self.audio.griffinlim(gta_sample, 32)
@@ -186,11 +188,9 @@ class ForwardTrainer:
         seq = seqs[0].tolist()
         _, gen_sample, att_sample = model.generate(seq)
         gen_fig = plot_mel(gen_sample)
-        att_fig = plot_attention(att_sample)
-        self.writer.add_figure('Attention/generated', att_fig, model.get_step())
         self.writer.add_figure('Mel/generated', gen_fig, model.get_step())
         gen_wav = self.audio.griffinlim(gen_sample, 32)
         self.writer.add_audio(
             tag='Wav/generated', snd_tensor=gen_wav,
-            global_step=model.tacotron.step, sample_rate=self.audio.sample_rate)
+            global_step=model.get_step(), sample_rate=self.audio.sample_rate)
 
