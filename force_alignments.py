@@ -41,13 +41,13 @@ if __name__ == '__main__':
     train_set = new_aligner_dataset(
         paths=paths, batch_size=batch_size, cfg=cfg)
 
-    for i, (seqs, mels, seq_lens, mel_lens, ids) in enumerate(train_set):
+    for i, (seqs, mels, seq_lens, mel_lens, mel_ids) in enumerate(train_set):
         print(f'{i} / {len(train_set)}')
         pred_batch = model(mels)
         pred_batch = torch.log_softmax(pred_batch, dim=-1)
         pred_batch = pred_batch.detach().cpu().numpy()
         for b in range(batch_size):
-            seq_len, mel_len = seq_lens[b], mel_lens[b]
+            seq_len, mel_len, mel_id = seq_lens[b], mel_lens[b], mel_ids[b]
             pred = pred_batch[b, :mel_len]
             target = seqs[b, :seq_len].numpy()
             target_len = target.shape[0]
@@ -135,6 +135,6 @@ if __name__ == '__main__':
             #print(f'sum durs new2: {sum(durations_new2)} mel shape {mel.shape}')
             #print(f'sum durs new2: {sum(durations_new2)} mel shape {mel.shape}')
 
-        #    np.save(paths.alg/f'{id}.npy', np.array(durations_new))
+            np.save(paths.dur/f'{id}.npy', np.array(durations_new))
         #    np.save(paths.alg2/f'{id}.npy', np.array(durations_new))
         #    np.save(paths.alg2/f'{id}.npy', np.array(durations_new2))
