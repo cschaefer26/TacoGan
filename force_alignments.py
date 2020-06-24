@@ -45,6 +45,8 @@ if __name__ == '__main__':
     tokenizer = Tokenizer(cfg.symbols)
 
     for i, (seqs, mels, seq_lens, mel_lens, mel_ids) in enumerate(train_set):
+        seqs, mels, seq_lens, mel_lens = \
+            seqs.to(device), mels.to(device), seq_lens.to(device), mel_lens.to(device)
         print(f'{i} / {len(train_set)}')
         pred_batch = model(mels)
         pred_batch = torch.log_softmax(pred_batch, dim=-1)
