@@ -7,103 +7,9 @@ import torch.nn as nn
 import torch
 import torch.nn.functional as F
 
+from model.tacotron import CBHG
 from utils.config import Config
 
-
-class HighwayNetwork(nn.Module):
-    def __init__(self, size):
-        super().__init__()
-        self.W1 = nn.Linear(size, size)
-        self.W2 = nn.Linear(size, size)
-        self.W1.bias.data.fill_(0.)
-
-    def forward(self, x):
-        x1 = self.W1(x)
-        x2 = self.W2(x)
-        g = torch.sigmoid(x2)
-        y = g * F.relu(x1) + (1. - g) * x
-        return y
-
-
-class CBHG(nn.Module):
-    def __init__(self, K, in_channels, channels, proj_channels, num_highways):
-        super().__init__()
-
-        # List of all rnns to call `flatten_parameters()` on
-        self._to_flatten = []
-
-        self.bank_kernels = [i for i in range(1, K + 1)]
-        self.conv1d_bank = nn.ModuleList()
-        for k in self.bank_kernels:
-            conv = BatchNormConv(in_channels, channels, k)
-            self.conv1d_bank.append(conv)
-
-        self.maxpool = nn.MaxPool1d(kernel_size=2, stride=1, padding=1)
-
-        self.conv_project1 = BatchNormConv(len(self.bank_kernels) * channels, proj_channels[0], 3)
-        self.conv_project2 = BatchNormConv(proj_channels[0], proj_channels[1], 3, activation=None)
-
-        # Fix the highway input if necessary
-        if proj_channels[-1] != channels:
-            self.highway_mismatch = True
-            self.pre_highway = nn.Linear(proj_channels[-1], channels, bias=False)
-        else:
-            self.highway_mismatch = False
-
-        self.highways = nn.ModuleList()
-        for i in range(num_highways):
-            hn = HighwayNetwork(channels)
-            self.highways.append(hn)
-
-        self.rnn = nn.GRU(channels, channels, batch_first=True, bidirectional=True)
-        self._to_flatten.append(self.rnn)
-
-        # Avoid fragmentation of RNN parameters and associated warning
-        self._flatten_parameters()
-
-    def forward(self, x):
-        # Although we `_flatten_parameters()` on init, when using DataParallel
-        # the model gets replicated, making it no longer guaranteed that the
-        # weights are contiguous in GPU memory. Hence, we must call it again
-        self._flatten_parameters()
-
-        # Save these for later
-        residual = x
-        seq_len = x.size(-1)
-        conv_bank = []
-
-        # Convolution Bank
-        for conv in self.conv1d_bank:
-            c = conv(x) # Convolution
-            conv_bank.append(c[:, :, :seq_len])
-
-        # Stack along the channel axis
-        conv_bank = torch.cat(conv_bank, dim=1)
-
-        # dump the last padding to fit residual
-        x = self.maxpool(conv_bank)[:, :, :seq_len]
-
-        # Conv1d projections
-        x = self.conv_project1(x)
-        x = self.conv_project2(x)
-
-        # Residual Connect
-        x = x + residual
-
-        # Through the highways
-        x = x.transpose(1, 2)
-        if self.highway_mismatch is True:
-            x = self.pre_highway(x)
-        for h in self.highways: x = h(x)
-
-        # And then the RNN
-        x, _ = self.rnn(x)
-        return x
-
-    def _flatten_parameters(self):
-        """Calls `flatten_parameters` on all the rnns used by the WaveRNN. Used
-        to improve efficiency and avoid PyTorch yelling at us."""
-        [m.flatten_parameters() for m in self._to_flatten]
 
 class LengthRegulator(nn.Module):
 
@@ -112,7 +18,7 @@ class LengthRegulator(nn.Module):
 
     def forward(self, x, dur):
         return self.expand(x, dur)
-     
+
     @staticmethod
     def build_index(duration, x):
         duration[duration < 0] = 0
@@ -135,23 +41,6 @@ class LengthRegulator(nn.Module):
         return y
 
 
-class PreNet(nn.Module):
-    def __init__(self, in_dims, fc1_dims=256, fc2_dims=128, dropout=0.5):
-        super().__init__()
-        self.fc1 = nn.Linear(in_dims, fc1_dims)
-        self.fc2 = nn.Linear(fc1_dims, fc2_dims)
-        self.p = dropout
-
-    def forward(self, x):
-        x = self.fc1(x)
-        x = F.relu(x)
-        x = F.dropout(x, self.p, training=self.training)
-        x = self.fc2(x)
-        x = F.relu(x)
-        x = F.dropout(x, self.p, training=self.training)
-        return x
-
-
 class DurationPredictor(nn.Module):
 
     def __init__(self, in_dims, conv_dims=256, rnn_dims=64, dropout=0.5):
@@ -159,10 +48,10 @@ class DurationPredictor(nn.Module):
         self.convs = torch.nn.ModuleList([
             BatchNormConv(in_dims, conv_dims, 5, activation=torch.relu),
             BatchNormConv(conv_dims, conv_dims, 5, activation=torch.relu),
-            #BatchNormConv(conv_dims, conv_dims, 5, activation=torch.relu),
+            BatchNormConv(conv_dims, conv_dims, 5, activation=torch.relu),
         ])
-
-        self.lin = nn.Linear(conv_dims, 1)
+        self.rnn = nn.GRU(conv_dims, rnn_dims, batch_first=True, bidirectional=True)
+        self.lin = nn.Linear(2 * rnn_dims, 1)
         self.dropout = dropout
 
     def forward(self, x, alpha=1.0):
@@ -171,6 +60,7 @@ class DurationPredictor(nn.Module):
             x = conv(x)
             x = F.dropout(x, p=self.dropout, training=self.training)
         x = x.transpose(1, 2)
+        x, _ = self.rnn(x)
         x = self.lin(x)
         return x / alpha
 
@@ -207,20 +97,18 @@ class ForwardTacotron(nn.Module):
                  highways,
                  dropout,
                  n_mels):
-
         super().__init__()
         self.rnn_dim = rnn_dim
-        self.pre = PreNet(embed_dims)
         self.embedding = nn.Embedding(num_chars, embed_dims)
         self.lr = LengthRegulator()
-        self.dur_pred = DurationPredictor(2*prenet_dims,
+        self.dur_pred = DurationPredictor(embed_dims,
                                           conv_dims=durpred_conv_dims,
                                           rnn_dims=durpred_rnn_dims,
                                           dropout=durpred_dropout)
         self.prenet = CBHG(K=prenet_k,
-                           in_channels=128,
+                           in_channels=embed_dims,
                            channels=prenet_dims,
-                           proj_channels=[prenet_dims, 128],
+                           proj_channels=[prenet_dims, embed_dims],
                            num_highways=highways)
         self.lstm = nn.LSTM(2 * prenet_dims,
                             rnn_dim,
@@ -241,7 +129,8 @@ class ForwardTacotron(nn.Module):
             self.step += 1
 
         x = self.embedding(x)
-        x = self.pre(x)
+        dur_hat = self.dur_pred(x)
+        dur_hat = dur_hat.squeeze()
 
         bs = dur.shape[0]
         ends = torch.cumsum(dur.float(), dim=1)
@@ -249,10 +138,6 @@ class ForwardTacotron(nn.Module):
 
         x = x.transpose(1, 2)
         x_p = self.prenet(x)
-
-        dur_hat = self.dur_pred(x_p)
-        dur_hat = dur_hat.squeeze()
-
         device = next(self.parameters()).device
         mel_len = mel.shape[-1]
         seq_len = mids.shape[1]
@@ -269,8 +154,7 @@ class ForwardTacotron(nn.Module):
         weights = torch.softmax(logits, dim=2)
         x = torch.einsum('bij,bjk->bik', weights, x_p)
 
-
-        #x = self.lr(x, dur)
+        # x = self.lr(x, dur)
         x, _ = self.lstm(x)
         x = F.dropout(x,
                       p=self.dropout,
@@ -292,18 +176,15 @@ class ForwardTacotron(nn.Module):
         x = torch.as_tensor(x, dtype=torch.long, device=device).unsqueeze(0)
 
         x = self.embedding(x)
-        x = self.pre(x)
-
-        x = x.transpose(1, 2)
-
-        x_p = self.prenet(x)
-
-        dur = self.dur_pred(x_p, alpha=alpha)
+        dur = self.dur_pred(x, alpha=alpha)
         dur = dur.squeeze(2)
+
         bs = dur.shape[0]
         ends = torch.cumsum(dur, dim=1)
         mids = ends - dur / 2.
 
+        x = x.transpose(1, 2)
+        x_p = self.prenet(x)
         device = next(self.parameters()).device
         mel_len = int(torch.sum(dur))
         seq_len = mids.shape[1]

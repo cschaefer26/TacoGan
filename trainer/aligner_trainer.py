@@ -111,6 +111,6 @@ class AlignerTrainer:
                 return
 
     def save_model(self, model: Aligner, opti: Optimizer, step=None):
-        save_model(self.ckpt_path/f'latest_model.pyt', model, opti, self.cfg)
+        save_model(self.ckpt_path/f'latest_aligner.pyt', model, opti, self.cfg)
         if step is not None:
-            save_model(self.ckpt_path / f'model_step{step}.pyt', model, opti, self.cfg)
+            save_model(self.ckpt_path / f'aligner_step{step}.pyt', model, opti, self.cfg)

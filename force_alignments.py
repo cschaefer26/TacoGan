@@ -128,13 +128,13 @@ if __name__ == '__main__':
                 sum_durs += durations_new[j]
             durations_new[-1] = len(mel_text) - sum(durations_new)
 
-            print('durs new')
-            print(durations_new)
+            #print('durs new')
+            #print(durations_new)
             #print(f'sum durs: {sum(durations)} mel shape {mel.shape}')
-            print(f'sum durs new: {sum(durations_new)} mel len {mel_len}')
+            #print(f'sum durs new: {sum(durations_new)} mel len {mel_len}')
             #print(f'sum durs new2: {sum(durations_new2)} mel shape {mel.shape}')
             #print(f'sum durs new2: {sum(durations_new2)} mel shape {mel.shape}')
 
-            np.save(paths.dur/f'{id}.npy', np.array(durations_new))
+            np.save(paths.dur/f'{mel_id}.npy', np.array(durations_new))
         #    np.save(paths.alg2/f'{id}.npy', np.array(durations_new))
         #    np.save(paths.alg2/f'{id}.npy', np.array(durations_new2))

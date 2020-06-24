@@ -1,13 +1,16 @@
 import time
+from typing import Tuple
 
 import torch
 import torch.nn.functional as F
 from torch.optim.optimizer import Optimizer
 from torch.utils.data.dataloader import DataLoader
+from torch.utils.data.dataset import Dataset
 from torch.utils.tensorboard import SummaryWriter
 
 from preprocessing.audio import Audio
 from utils.dataset import new_audio_datasets
+from utils.io import save_model
 from utils.losses import MaskedL1
 from model.forward_tacotron import ForwardTacotron
 from utils.common import Averager
@@ -21,14 +24,12 @@ class Session:
 
     def __init__(self,
                  index: int,
-                 r: int,
                  lr: int,
                  max_step: int,
                  bs: int,
                  train_set: DataLoader,
                  val_set: DataLoader = None) -> None:
         self.index = index
-        self.r = r
         self.lr = lr
         self.max_step = max_step
         self.bs = bs
@@ -45,25 +46,24 @@ class ForwardTrainer:
         self.ckpt_path = self.paths.ckpt/cfg.config_id
         log_dir = self.ckpt_path/'tensorboard'
         self.writer = SummaryWriter(log_dir=log_dir, comment='v1')
-        self.criterion = MaskedL1()
+        self.l1_loss = MaskedL1()
 
     def train(self, model: ForwardTacotron, opti: Optimizer):
-        for i, session_params in enumerate(self.cfg.training_schedule, 1):
-            r, lr, max_step, bs = session_params
+        for i, session_params in enumerate(self.cfg.forward_training_schedule, 1):
+            lr, max_step, bs = session_params
             if model.get_step() < max_step:
                 train_set, val_set = new_audio_datasets(
-                    paths=self.paths, batch_size=bs, r=r, cfg=self.cfg)
+                    paths=self.paths, batch_size=bs, cfg=self.cfg)
                 session = Session(
-                    index=i, r=r, lr=lr, max_step=max_step,
+                    index=i, lr=lr, max_step=max_step,
                     bs=bs, train_set=train_set, val_set=val_set)
                 self.train_session(model, opti, session)
 
     def train_session(self, model: ForwardTacotron, opti: Optimizer, session: Session):
-        model.r = session.r
         cfg = self.cfg
         device = next(model.parameters()).device
         display_params([
-            ('Session', session.index), ('Reduction', session.r),
+            ('Session', session.index),
             ('Max Step', session.max_step), ('Learning Rate', session.lr),
             ('Batch Size', session.bs), ('Steps per Epoch', len(session.train_set))
         ])
@@ -71,31 +71,32 @@ class ForwardTrainer:
         for g in opti.param_groups:
             g['lr'] = session.lr
 
-        loss_avg = Averager()
+        mel_loss_avg = Averager()
+        dur_loss_avg = Averager()
         duration_avg = Averager()
 
         while model.get_step() <= session.max_step:
 
-            for i, (seqs, mels, stops, ids, lens) in enumerate(session.train_set):
-                seqs, mels, stops, lens = \
-                    seqs.to(device), mels.to(device), stops.to(device), lens.to(device)
+            for i, (seqs, mels, durs, seq_lens, mel_lens, ids) in enumerate(session.train_set):
+                seqs, mels, durs, seq_lens, mel_lens = \
+                    seqs.to(device), mels.to(device), durs.to(device), seq_lens.to(device), mel_lens.to(device)
                 t_start = time.time()
 
-                block_step = model.get_step() % cfg.steps_to_eval + 1
-
                 model.train()
-                lin_mels, post_mels, durs = model(seqs, mels)
 
-                lin_loss = self.criterion(lin_mels, mels, lens)
-                post_loss = self.criterion(post_mels, mels, lens)
+                m1_hat, m2_hat, dur_hat = model(seqs, mels, durs)
 
-                loss = lin_loss + post_loss
-                loss_avg.add(loss)
+                m1_loss = self.l1_loss(m1_hat, mels, mel_lens)
+                m2_loss = self.l1_loss(m2_hat, mels, mel_lens)
+                dur_loss = self.l1_loss(dur_hat, durs)
 
+                loss = m1_loss + m2_loss + dur_loss
                 opti.zero_grad()
                 loss.backward()
-                torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+                torch.nn.utils.clip_grad_norm_(model.parameters(), 1)
                 opti.step()
+                mel_loss_avg.add(m1_loss.item() + m2_loss.item())
+                dur_loss_avg.add(dur_loss.item())
 
                 duration_avg.add(time.time() - t_start)
                 steps_per_s = 1. / duration_avg.get()
@@ -104,80 +105,80 @@ class ForwardTrainer:
                 self.writer.add_scalar('Params/batch_sze', session.bs, model.get_step())
                 self.writer.add_scalar('Params/learning_rate', session.lr, model.get_step())
 
-                msg = f'{block_step}/{cfg.steps_to_eval} | Step: {model.get_step()} ' \
-                      f'| {steps_per_s:#.2} steps/s | Avg. Loss: {loss_avg.get():#.4} '
+                msg = f'Step: {model.get_step()} ' \
+                      f'| {steps_per_s:#.2} steps/s | Avg. Mel Loss: {mel_loss_avg.get():#.4} ' \
+                      f'| Avg. Duration Loss: {dur_loss_avg.get():#.4} '
                 stream(msg)
 
                 if model.get_step() % cfg.steps_to_checkpoint == 0:
                     self.save_model(model, opti, step=model.get_step())
 
                 if model.get_step() % self.cfg.steps_to_eval == 0:
-                    val_loss = self.evaluate(model, session.val_set, msg)
+                    val_loss = self.evaluate(model, session.val_set)
                     self.writer.add_scalar('Loss/val', val_loss, model.get_step())
                     self.save_model(model)
                     stream(msg + f'| Val Loss: {float(val_loss):#0.4} \n')
-                    loss_avg.reset()
-                    duration_avg.reset()
+
+            mel_loss_avg.reset()
+            dur_loss_avg.reset()
+            duration_avg.reset()
 
             if model.get_step() > session.max_step:
                 return
 
-    def evaluate(self, model, val_set, msg) -> float:
-        model.tacotron.eval()
-        val_loss = 0
-        device = next(model.tacotron.parameters()).device
-        for i, batch in enumerate(val_set, 1):
-            stream(msg + f'| Evaluating {i}/{len(val_set)}')
-            seqs, mels, stops, ids, lens = batch
-            seqs, mels, stops, lens = \
-                seqs.to(device), mels.to(device), stops.to(device), lens.to(device)
+    def evaluate(self, model: ForwardTacotron, val_set: DataLoader) -> Tuple[float, float]:
+        model.eval()
+        m_val_loss = 0
+        dur_val_loss = 0
+        device = next(model.parameters()).device
+        for i, (seqs, mels, durs, seq_lens, mel_lens, ids) in enumerate(val_set, 1):
+            seqs, mels, seq_lens, mel_lens = \
+                seqs.to(device), mels.to(device), seq_lens.to(device), mel_lens.to(device)
             with torch.no_grad():
-                pred = model.tacotron(seqs, mels)
-                lin_mels, post_mels, att = pred
-                lin_loss = F.l1_loss(lin_mels, mels)
-                post_loss = F.l1_loss(post_mels, mels)
-                val_loss += lin_loss + post_loss
-            if i == 1:
-                self.generate_samples(model, batch, pred)
-
-        val_loss /= len(val_set)
-        return float(val_loss)
+                m1_hat, m2_hat, dur_hat = model(seqs, mels, durs)
+                m1_loss = self.l1_loss(m1_hat, mels, mel_lens)
+                m2_loss = self.l1_loss(m2_hat, mels, mel_lens)
+                dur_loss = self.l1_loss(dur_hat, durs, seq_lens)
+                m_val_loss += m1_loss.item() + m2_loss.item()
+                dur_val_loss += dur_loss.item()
+        return m_val_loss / len(val_set), dur_val_loss / len(val_set)
 
     def save_model(self, model: ForwardTacotron, opti: Optimizer, step=None):
-        model.save(self.ckpt_path/'latest_model.zip')
+        save_model(self.ckpt_path/f'latest_forward.pyt', model, opti, self.cfg)
         if step is not None:
-            model.save(self.ckpt_path/f'model_step_{step}.zip')
+            save_model(self.ckpt_path / f'forward_step{step}.pyt', model, opti, self.cfg)
 
     @ignore_exception
     def generate_samples(self, model: ForwardTacotron,
-                         batch: torch.Tensor, pred: torch.Tensor):
-        seqs, mels, stops, ids, lens = batch
+                         batch: torch.Tensor,
+                         pred: torch.Tensor):
+        seqs, mels, durs, seq_lens, mel_lens, ids = batch
         lin_mels, post_mels, att = pred
-        mel_sample = mels.transpose(1, 2)[0, :lens[0]].detach().cpu().numpy()
-        gta_sample = post_mels.transpose(1, 2)[0, :lens[0]].detach().cpu().numpy()
+        mel_sample = mels.transpose(1, 2)[0, :mel_lens[0]].detach().cpu().numpy()
+        gta_sample = post_mels.transpose(1, 2)[0, :mel_lens[0]].detach().cpu().numpy()
         att_sample = att[0].detach().cpu().numpy()
         target_fig = plot_mel(mel_sample)
         gta_fig = plot_mel(gta_sample)
         att_fig = plot_attention(att_sample)
-        self.writer.add_figure('Mel/target', target_fig, model.tacotron.step)
-        self.writer.add_figure('Mel/ground_truth_aligned', gta_fig, model.tacotron.step)
-        self.writer.add_figure('Attention/ground_truth_aligned', att_fig, model.tacotron.step)
+        self.writer.add_figure('Mel/target', target_fig, model.get_step())
+        self.writer.add_figure('Mel/ground_truth_aligned', gta_fig, model.get_step())
+        self.writer.add_figure('Attention/ground_truth_aligned', att_fig, model.get_step())
 
         target_wav = self.audio.griffinlim(mel_sample, 32)
         gta_wav = self.audio.griffinlim(gta_sample, 32)
         self.writer.add_audio(
             tag='Wav/target', snd_tensor=target_wav,
-            global_step=model.tacotron.step, sample_rate=self.audio.sample_rate)
+            global_step=model.get_step(), sample_rate=self.audio.sample_rate)
         self.writer.add_audio(
             tag='Wav/ground_truth_aligned', snd_tensor=gta_wav,
-            global_step=model.tacotron.step, sample_rate=self.audio.sample_rate)
+            global_step=model.get_step(), sample_rate=self.audio.sample_rate)
 
         seq = seqs[0].tolist()
-        _, gen_sample, att_sample = model.tacotron.generate(seq, steps=lens[0])
+        _, gen_sample, att_sample = model.generate(seq)
         gen_fig = plot_mel(gen_sample)
         att_fig = plot_attention(att_sample)
-        self.writer.add_figure('Attention/generated', att_fig, model.tacotron.step)
-        self.writer.add_figure('Mel/generated', gen_fig, model.tacotron.step)
+        self.writer.add_figure('Attention/generated', att_fig, model.get_step())
+        self.writer.add_figure('Mel/generated', gen_fig, model.get_step())
         gen_wav = self.audio.griffinlim(gen_sample, 32)
         self.writer.add_audio(
             tag='Wav/generated', snd_tensor=gen_wav,

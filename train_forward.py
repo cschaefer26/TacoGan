@@ -21,7 +21,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='Entrypoint for training the TacoGan model.')
     parser.add_argument(
-        '--config', '-c', help='Point to the config.', default='config.yaml')
+        '--config', '-c', help='Point to the config.', default='config/config.yaml')
 
     args = parser.parse_args()
     device = get_device()
