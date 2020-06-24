@@ -213,6 +213,8 @@ class ForwardTacotron(nn.Module):
         x = x.transpose(1, 2)
         x_post = self.postnet(x)
         x_post = self.post_proj(x_post)
+        x = x.transpose(1, 2)
+        x_post = x_post.transpose(1, 2)
 
         x, x_post, dur = x.squeeze(), x_post.squeeze(), dur.squeeze()
         x = x.cpu().data.numpy()
