@@ -84,11 +84,16 @@ class ForwardTrainer:
 
                 model.train()
 
+                mels = mels.transpose(1, 2)
                 m1_hat, m2_hat, dur_hat = model(seqs, mels, durs)
+                mels = mels.transpose(1, 2)
+                m1_hat = m1_hat.transpose(1, 2)
+                m2_hat = m2_hat.transpose(1, 2)
 
                 m1_loss = self.l1_loss(m1_hat, mels, mel_lens)
                 m2_loss = self.l1_loss(m2_hat, mels, mel_lens)
-                dur_loss = self.l1_loss(dur_hat, durs)
+
+                dur_loss = self.l1_loss(dur_hat, durs, seq_lens)
 
                 loss = m1_loss + m2_loss + dur_loss
                 opti.zero_grad()
@@ -100,8 +105,8 @@ class ForwardTrainer:
 
                 duration_avg.add(time.time() - t_start)
                 steps_per_s = 1. / duration_avg.get()
-                self.writer.add_scalar('Loss/train', loss, model.get_step())
-                self.writer.add_scalar('Params/reduction_factor', session.r, model.get_step())
+                self.writer.add_scalar('Mel_Loss/train', loss, model.get_step())
+                self.writer.add_scalar('Dur_Loss/train', dur_loss, model.get_step())
                 self.writer.add_scalar('Params/batch_sze', session.bs, model.get_step())
                 self.writer.add_scalar('Params/learning_rate', session.lr, model.get_step())
 
@@ -110,14 +115,15 @@ class ForwardTrainer:
                       f'| Avg. Duration Loss: {dur_loss_avg.get():#.4} '
                 stream(msg)
 
-                if model.get_step() % cfg.steps_to_checkpoint == 0:
+                if model.get_step() % cfg.forward_steps_to_checkpoint == 0:
                     self.save_model(model, opti, step=model.get_step())
 
-                if model.get_step() % self.cfg.steps_to_eval == 0:
-                    val_loss = self.evaluate(model, session.val_set)
-                    self.writer.add_scalar('Loss/val', val_loss, model.get_step())
+                if model.get_step() % self.cfg.forward_steps_to_eval == 0:
+                    val_mel_loss, val_dur_loss = self.evaluate(model, session.val_set)
+                    self.writer.add_scalar('Mel_Loss/val', val_mel_loss, model.get_step())
+                    self.writer.add_scalar('Dur_Loss/val', val_mel_loss, model.get_step())
                     self.save_model(model)
-                    stream(msg + f'| Val Loss: {float(val_loss):#0.4} \n')
+                    stream(msg + f'| Val Loss: {float(val_mel_loss):#0.4} \n')
 
             mel_loss_avg.reset()
             dur_loss_avg.reset()
@@ -135,7 +141,11 @@ class ForwardTrainer:
             seqs, mels, seq_lens, mel_lens = \
                 seqs.to(device), mels.to(device), seq_lens.to(device), mel_lens.to(device)
             with torch.no_grad():
+                mels = mels.transpose(1, 2)
                 m1_hat, m2_hat, dur_hat = model(seqs, mels, durs)
+                mels = mels.transpose(1, 2)
+                m1_hat = m1_hat.transpose(1, 2)
+                m2_hat = m2_hat.transpose(1, 2)
                 m1_loss = self.l1_loss(m1_hat, mels, mel_lens)
                 m2_loss = self.l1_loss(m2_hat, mels, mel_lens)
                 dur_loss = self.l1_loss(dur_hat, durs, seq_lens)

@@ -183,12 +183,12 @@ def collate_forward(batch: tuple) -> tuple:
     seq_lens = [len(seq) for seq in seqs]
     max_seq_len = max(seq_lens)
     max_mel_len = max(mel_lens)
+
     seqs = _to_tensor_1d(seqs, max_seq_len)
     durs = _to_tensor_1d(durs, max_seq_len)
     mels = _to_tensor_2d(mels, max_mel_len)
     seq_lens = torch.tensor(seq_lens)
     mel_lens = torch.tensor(mel_lens)
-    durs = torch.tensor(durs)
     return seqs, mels, durs, seq_lens, mel_lens, ids
 
 
