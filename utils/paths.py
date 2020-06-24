@@ -17,6 +17,7 @@ class Paths:
     def create_paths(self):
         os.makedirs(self.data, exist_ok=True)
         os.makedirs(self.mel, exist_ok=True)
+        os.makedirs(self.dur, exist_ok=True)
         os.makedirs(self.ckpt, exist_ok=True)
         os.makedirs(self.outputs, exist_ok=True)
 
