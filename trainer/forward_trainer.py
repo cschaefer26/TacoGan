@@ -136,8 +136,8 @@ class ForwardTrainer:
         dur_val_loss = 0
         device = next(model.parameters()).device
         for i, (seqs, mels, durs, seq_lens, mel_lens, ids) in enumerate(val_set, 1):
-            seqs, mels, seq_lens, mel_lens = \
-                seqs.to(device), mels.to(device), seq_lens.to(device), mel_lens.to(device)
+            seqs, mels, durs, seq_lens, mel_lens = \
+                seqs.to(device), mels.to(device), durs.to(device), seq_lens.to(device), mel_lens.to(device)
             with torch.no_grad():
                 mels = mels.transpose(1, 2)
                 m1_hat, m2_hat, dur_hat = model(seqs, mels, durs)
@@ -160,6 +160,9 @@ class ForwardTrainer:
     def generate_plots(self, model: ForwardTacotron, val_set: DataLoader):
         batch = next(iter(val_set))
         seqs, mels, durs, seq_lens, mel_lens, ids = batch
+        device = next(model.parameters()).device
+        seqs, mels, durs, seq_lens, mel_lens = \
+            seqs.to(device), mels.to(device), durs.to(device), seq_lens.to(device), mel_lens.to(device)
         m1_hat, m2_hat, dur_hat = model(seqs, mels, durs)
         mel_sample = mels.transpose(1, 2)[0, :mel_lens[0]].detach().cpu().numpy()
         gta_sample = m2_hat.transpose(1, 2)[0, :mel_lens[0]].detach().cpu().numpy()
