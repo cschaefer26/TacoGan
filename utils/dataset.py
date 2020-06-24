@@ -104,6 +104,8 @@ def new_aligner_dataset(paths: Paths, batch_size, cfg):
     text_path = str(paths.data/'text_dict.pkl')
     text_dict = unpickle_binary(text_path)
     tokenizer = Tokenizer(cfg.symbols)
+    train_sampler = BinnedLengthSampler(mel_lens, batch_size, batch_size * 3)
+
     train_dataset = AlignerDataset(mel_path=paths.mel,
                                    mel_ids=mel_ids,
                                    text_dict=text_dict,
@@ -112,7 +114,7 @@ def new_aligner_dataset(paths: Paths, batch_size, cfg):
     train_set = DataLoader(train_dataset,
                            collate_fn=lambda batch: collate_aligner(batch),
                            batch_size=batch_size,
-                           sampler=None,
+                           sampler=train_sampler,
                            shuffle=True,
                            num_workers=1,
                            pin_memory=True)
@@ -130,6 +132,7 @@ def new_audio_datasets(paths: Paths, batch_size, cfg):
     val_ids, val_lens = zip(*val_dataset)
     text_path = str(paths.data/'text_dict.pkl')
     text_dict = unpickle_binary(text_path)
+    train_sampler = BinnedLengthSampler(train_lens, batch_size, batch_size * 3)
 
     tokenizer = Tokenizer(cfg.symbols)
 
@@ -148,8 +151,7 @@ def new_audio_datasets(paths: Paths, batch_size, cfg):
     train_set = DataLoader(train_dataset,
                            collate_fn=lambda batch: collate_forward(batch),
                            batch_size=batch_size,
-                           sampler=None,
-                           shuffle=True,
+                           sampler=train_sampler,
                            num_workers=1,
                            pin_memory=True)
 

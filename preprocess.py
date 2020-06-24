@@ -35,7 +35,6 @@ class Preprocessor:
         np.save(self.mel_path/f'{mel_id}.npy', mel, allow_pickle=False)
         text = self.text_dict[mel_id]
         text = self.cleaner(text)
-        print(mel.shape)
         return mel_id, mel.shape[0], text
 
 

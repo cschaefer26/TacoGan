@@ -24,6 +24,7 @@ class TestDataset(unittest.TestCase):
         cleaner = lambda x: x.lower()
         symbols = 'abcdefghijklmnopqrstuvwxyz. '
         tokenizer = Tokenizer(cleaners=cleaner, symbols=symbols)
+
         dataset = AudioDataset(mel_path=self.mel_path,
                                mel_ids=mel_ids,
                                text_dict=text_dict,
