@@ -115,7 +115,6 @@ def new_aligner_dataset(paths: Paths, batch_size, cfg):
                            collate_fn=lambda batch: collate_aligner(batch),
                            batch_size=batch_size,
                            sampler=train_sampler,
-                           shuffle=True,
                            num_workers=1,
                            pin_memory=True)
     return train_set
@@ -185,10 +184,12 @@ def collate_forward(batch: tuple) -> tuple:
     max_seq_len = max(seq_lens)
     max_mel_len = max(mel_lens)
     seqs = _to_tensor_1d(seqs, max_seq_len)
+    durs = _to_tensor_1d(durs, max_seq_len)
     mels = _to_tensor_2d(mels, max_mel_len)
     seq_lens = torch.tensor(seq_lens)
     mel_lens = torch.tensor(mel_lens)
-    return seqs, mels, seq_lens, mel_lens, ids
+    durs = torch.tensor(durs)
+    return seqs, mels, durs, seq_lens, mel_lens, ids
 
 
 def _to_tensor_1d(seqs: List[np.array], max_len: int):
