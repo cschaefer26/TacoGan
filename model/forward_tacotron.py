@@ -139,7 +139,7 @@ class ForwardTacotron(nn.Module):
         x = x.transpose(1, 2)
         x_p = self.prenet(x)
         device = next(self.parameters()).device
-        mel_len = mel.shape[-1]
+        mel_len = mel.shape[1]
         seq_len = mids.shape[1]
 
         t_range = torch.arange(0, mel_len).long().to(device)
@@ -166,8 +166,11 @@ class ForwardTacotron(nn.Module):
         x_post = self.post_proj(x_post)
         x_post = x_post.transpose(1, 2)
 
-        x_post = self.pad(x_post, mel.size(2))
-        x = self.pad(x, mel.size(2))
+        x_post = self.pad(x_post, mel.size(1))
+        x = self.pad(x, mel.size(1))
+
+        x = x.transpose(1, 2)
+        x_post = x_post.transpose(1, 2)
         return x, x_post, dur_hat
 
     def generate(self, x, alpha=1.0):
@@ -206,11 +209,10 @@ class ForwardTacotron(nn.Module):
                       p=self.dropout,
                       training=self.training)
         x = self.lin(x)
-        x = x.transpose(1, 2)
 
+        x = x.transpose(1, 2)
         x_post = self.postnet(x)
         x_post = self.post_proj(x_post)
-        x_post = x_post.transpose(1, 2)
 
         x, x_post, dur = x.squeeze(), x_post.squeeze(), dur.squeeze()
         x = x.cpu().data.numpy()

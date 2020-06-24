@@ -83,12 +83,7 @@ class ForwardTrainer:
                 t_start = time.time()
 
                 model.train()
-
-                mels = mels.transpose(1, 2)
                 m1_hat, m2_hat, dur_hat = model(seqs, mels, durs)
-                mels = mels.transpose(1, 2)
-                m1_hat = m1_hat.transpose(1, 2)
-                m2_hat = m2_hat.transpose(1, 2)
 
                 m1_loss = self.l1_loss(m1_hat, mels, mel_lens)
                 m2_loss = self.l1_loss(m2_hat, mels, mel_lens)
@@ -165,10 +160,7 @@ class ForwardTrainer:
     def generate_plots(self, model: ForwardTacotron, val_set: DataLoader):
         batch = next(iter(val_set))
         seqs, mels, durs, seq_lens, mel_lens, ids = batch
-        mels = mels.transpose(1, 2)
         m1_hat, m2_hat, dur_hat = model(seqs, mels, durs)
-        mels = mels.transpose(1, 2)
-        m2_hat = m2_hat.transpose(1, 2)
         mel_sample = mels.transpose(1, 2)[0, :mel_lens[0]].detach().cpu().numpy()
         gta_sample = m2_hat.transpose(1, 2)[0, :mel_lens[0]].detach().cpu().numpy()
         target_fig = plot_mel(mel_sample)
@@ -186,7 +178,7 @@ class ForwardTrainer:
             global_step=model.get_step(), sample_rate=self.audio.sample_rate)
 
         seq = seqs[0].tolist()
-        _, gen_sample, att_sample = model.generate(seq)
+        _, gen_sample, _ = model.generate(seq)
         gen_fig = plot_mel(gen_sample)
         self.writer.add_figure('Mel/generated', gen_fig, model.get_step())
         gen_wav = self.audio.griffinlim(gen_sample, 32)
