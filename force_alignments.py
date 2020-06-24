@@ -7,6 +7,7 @@ import torch
 import argparse
 
 from model.aligner import Aligner
+from text.tokenizer import Tokenizer
 from utils.config import Config
 from utils.dataset import new_aligner_dataset
 from utils.io import unpickle_binary
@@ -40,6 +41,8 @@ if __name__ == '__main__':
     batch_size = 8
     train_set = new_aligner_dataset(
         paths=paths, batch_size=batch_size, cfg=cfg)
+
+    tokenizer = Tokenizer(cfg.symbols)
 
     for i, (seqs, mels, seq_lens, mel_lens, mel_ids) in enumerate(train_set):
         print(f'{i} / {len(train_set)}')
@@ -94,6 +97,8 @@ if __name__ == '__main__':
                 adj_mat = coo_matrix((data, (row_ind, col_ind)), shape=(rows * cols, rows * cols))
                 return adj_mat.tocsr()
 
+
+
             adj_matrix = to_adj_matrix(pred_max)
             dist_matrix, predecessors = dijkstra(csgraph=adj_matrix, directed=True, indices=0, return_predecessors=True)
             path = []
@@ -121,6 +126,14 @@ if __name__ == '__main__':
             for node_index in path:
                 i, j = from_node_index(node_index, cols)
                 mel_text[i] = j
+
+            for t, j in enumerate(text_mel):
+                i = text_mel[j]
+                k = target[j]
+                sym = tokenizer.decode([k])[0]
+                if sym == ' ' and 0 < j < len(text_mel) - 1:
+                    before = text_mel[j]
+                    text_mel[j] = (text_mel[j - 1] + text_mel[j + 1]) // 2
 
             sum_durs = 0
             for j in range(len(text_mel) - 1):
