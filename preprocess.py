@@ -80,10 +80,14 @@ if __name__ == '__main__':
     map_func = pool.imap_unordered(preprocessor.process_file, files)
 
     dataset = []
-    texts = []
+    cleaned_texts = []
     for i, (mel_id, mel_len, text) in enumerate(map_func, 1):
         dataset += [(mel_id, mel_len)]
         progbar(i, len(files), f'{i}/{len(files)}')
+        cleaned_texts += [(mel_id, text)]
+
+    for id, text in cleaned_texts:
+        text_dict[id] = text
 
     dataset = [d for d in dataset if d[0] in text_dict]
     random = Random(cfg.seed)
