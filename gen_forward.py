@@ -41,15 +41,11 @@ if __name__ == '__main__':
     paths = Paths()
     audio = Audio(cfg)
     print(f'loaded forward step {model.get_step()}')
-    text_dict = unpickle_binary('data/text_dict.pkl')
 
-    #text = 'President Trump met with other leaders at the group of 20 conference.'
+    text = 'president trump met with other leaders at the group of twenty conference.'
 
-    print(text_dict)
     cleaner = get_cleaner(cfg.language)
     tokenizer = Tokenizer(cfg.symbols)
-    print(cfg.language)
-    text = cleaner(text)
     print(text)
     seq = tokenizer.encode(text)
     _, mel, dur = model.generate(seq)
