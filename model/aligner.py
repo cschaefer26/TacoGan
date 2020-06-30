@@ -50,7 +50,7 @@ class Aligner(torch.nn.Module):
         for conv in self.convs:
             x = conv(x)
         x.transpose_(1, 2)
-        #x, _ = self.rnn(x)
+        x, _ = self.rnn(x)
         x = self.lin(x)
         return x
 
