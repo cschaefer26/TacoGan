@@ -41,7 +41,7 @@ class Aligner(torch.nn.Module):
         ])
         self.rnn = torch.nn.LSTM(
             conv_dim, lstm_dim, batch_first=True, bidirectional=True)
-        self.lin = torch.nn.Linear(2 * lstm_dim, num_symbols)
+        self.lin = torch.nn.Linear(conv_dim, num_symbols)
 
     def forward(self, x):
         if self.train:
@@ -50,7 +50,7 @@ class Aligner(torch.nn.Module):
         for conv in self.convs:
             x = conv(x)
         x.transpose_(1, 2)
-        x, _ = self.rnn(x)
+        #x, _ = self.rnn(x)
         x = self.lin(x)
         return x
 
