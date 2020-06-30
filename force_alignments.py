@@ -99,8 +99,6 @@ if __name__ == '__main__':
                 adj_mat = coo_matrix((data, (row_ind, col_ind)), shape=(rows * cols, rows * cols))
                 return adj_mat.tocsr()
 
-
-
             adj_matrix = to_adj_matrix(pred_max)
             dist_matrix, predecessors = dijkstra(csgraph=adj_matrix, directed=True, indices=0, return_predecessors=True)
             path = []
@@ -115,6 +113,7 @@ if __name__ == '__main__':
             text_mel = {}
             text_mel_prob = {}
             durations_new = np.zeros(seq_len)
+            durations = np.zeros(seq_len)
             for node_index in path:
                 i, j = from_node_index(node_index, cols)
 
@@ -128,6 +127,9 @@ if __name__ == '__main__':
             for node_index in path:
                 i, j = from_node_index(node_index, cols)
                 mel_text[i] = j
+
+            for j in mel_text.values():
+                durations[j] += 1
 
             for t, j in enumerate(text_mel):
                 i = text_mel[j]
@@ -150,6 +152,6 @@ if __name__ == '__main__':
             #print(f'sum durs new2: {sum(durations_new2)} mel shape {mel.shape}')
             #print(f'sum durs new2: {sum(durations_new2)} mel shape {mel.shape}')
 
-            np.save(paths.dur/f'{mel_id}.npy', np.array(durations_new))
+            np.save(paths.dur/f'{mel_id}.npy', np.array(durations))
         #    np.save(paths.alg2/f'{id}.npy', np.array(durations_new))
         #    np.save(paths.alg2/f'{id}.npy', np.array(durations_new2))
