@@ -29,13 +29,13 @@ class BatchNormConv(nn.Module):
 
 class Aligner(torch.nn.Module):
 
-    def __init__(self, n_mels: int, conv_dim, lstm_dim: int, num_symbols: int, dropout=0) -> None:
+    def __init__(self, n_mels: int, conv_dim, lstm_dim: int, num_symbols: int, dropout=0.5) -> None:
         super().__init__()
         self.register_buffer('step', torch.tensor(1, dtype=torch.int))
         self.convs = nn.ModuleList([
-            BatchNormConv(n_mels, conv_dim, 5, activation=torch.relu, dropout=dropout),
-            BatchNormConv(conv_dim, conv_dim, 5, activation=torch.relu, dropout=dropout),
-            BatchNormConv(conv_dim, conv_dim, 5, activation=torch.relu, dropout=dropout),
+            BatchNormConv(n_mels, conv_dim, 3, activation=torch.relu, dropout=dropout),
+            BatchNormConv(conv_dim, conv_dim, 3, activation=torch.relu, dropout=dropout),
+            BatchNormConv(conv_dim, conv_dim, 3, activation=torch.relu, dropout=dropout),
             BatchNormConv(conv_dim, conv_dim, 5, activation=torch.relu, dropout=dropout),
             BatchNormConv(conv_dim, conv_dim, 5, activation=torch.relu, dropout=dropout),
         ])
