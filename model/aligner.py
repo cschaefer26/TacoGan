@@ -10,7 +10,7 @@ from utils.config import Config
 
 class BatchNormConv(nn.Module):
 
-    def __init__(self, in_channels, out_channels, kernel_size, activation, dropout=0.5):
+    def __init__(self, in_channels, out_channels, kernel_size, activation, dropout=0):
         super().__init__()
         self.conv = nn.Conv1d(
             in_channels, out_channels, kernel_size,
@@ -33,14 +33,12 @@ class Aligner(torch.nn.Module):
         super().__init__()
         self.register_buffer('step', torch.tensor(1, dtype=torch.int))
         self.convs = nn.ModuleList([
-            BatchNormConv(n_mels, conv_dim, 3, activation=torch.relu, dropout=dropout),
-            BatchNormConv(conv_dim, conv_dim, 3, activation=torch.relu, dropout=dropout),
-            BatchNormConv(conv_dim, conv_dim, 3, activation=torch.relu, dropout=dropout),
+            BatchNormConv(n_mels, conv_dim, 5, activation=torch.relu, dropout=dropout),
+            BatchNormConv(conv_dim, conv_dim, 5, activation=torch.relu, dropout=dropout),
+            BatchNormConv(conv_dim, conv_dim, 5, activation=torch.relu, dropout=dropout),
         ])
         self.rnn_1 = torch.nn.GRU(
             conv_dim, lstm_dim, batch_first=True, bidirectional=True)
-        self.rnn_2 = torch.nn.GRU(
-            2 * lstm_dim, lstm_dim, batch_first=True, bidirectional=True)
         self.lin = torch.nn.Linear(2 * lstm_dim, num_symbols)
 
     def forward(self, x):
@@ -51,7 +49,6 @@ class Aligner(torch.nn.Module):
             x = conv(x)
         x.transpose_(1, 2)
         x, _ = self.rnn_1(x)
-        x, _ = self.rnn_2(x)
         x = self.lin(x)
         return x
 

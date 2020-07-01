@@ -55,4 +55,4 @@ dropout: 0.1
 # ALIGNER PARAMS
 aligner_lstm_dim: 512
 aligner_conv_dim: 512
-aligner_dropout: 0.5
+aligner_dropout: 0.1
