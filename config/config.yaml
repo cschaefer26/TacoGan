@@ -53,6 +53,6 @@ highways: 4
 dropout: 0.1
 
 # ALIGNER PARAMS
-aligner_lstm_dim: 256
-aligner_conv_dim: 256
+aligner_lstm_dim: 512
+aligner_conv_dim: 512
 aligner_dropout: 0.5
