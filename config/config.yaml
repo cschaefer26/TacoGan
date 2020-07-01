@@ -32,8 +32,8 @@ forward_steps_to_checkpoint: 10_000
 
 # TRAINING ALIGNER (overrides loaded model config)
 aligner_training_schedule:
-  - [1e-4, 50_000, 8]
-  - [1e-5, 100_000, 8]
+  - [1e-4, 100_000, 8]
+  - [1e-5, 200_000, 8]
 aligner_steps_to_checkpoint: 10_000
 
 
